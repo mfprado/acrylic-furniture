@@ -71,7 +71,7 @@ export function cutMyText(o) {
     `Thickness         ${o.thickness} mm`,
     `Quantity          ${o.qty}`,
     `Polished edges    ${o.polishedEdges ? 'Yes' : 'No'}`,
-    `Drilled holes     Yes, ${o.layout}`,
+    `Drilled holes     Yes, ${o.holes.length}`,
     `Hole diameter     ${o.holeD} mm`,
     `Distance from edge ${o.edgeToCentre} mm to centre (${o.edgeToHoleEdge} mm to hole edge)`,
     `Holes (x, y from front left, centres):`,
