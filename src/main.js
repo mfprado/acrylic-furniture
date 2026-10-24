@@ -6,13 +6,25 @@ const form = document.querySelector('#config');
 const viewer = createViewer(document.querySelector('#viewer'));
 const $ = (id) => document.getElementById(id);
 
-for (const [k, v] of Object.entries(DEFAULTS)) if (form.elements[k]) form.elements[k].value = v;
+// Remember the last settings in this browser so a refresh keeps them.
+const STORE_KEY = 'acrylic-furniture:settings';
+const load = () => {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY)) ?? {}; } catch { return {}; }
+};
+const save = (input) => {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(input)); } catch { /* private mode: ignore */ }
+};
+const fill = (values) => {
+  for (const [k, v] of Object.entries(values)) if (form.elements[k]) form.elements[k].value = v;
+};
+fill({ ...DEFAULTS, ...load() });
 
 let framed = null;
 let current = null;
 
 function render() {
   const input = Object.fromEntries([...new FormData(form)].map(([k, v]) => [k, ['finish', 'color', 'rod'].includes(k) ? v : Number(v)]));
+  save(input);
   let design;
   try {
     design = computeDesign(input);
@@ -69,6 +81,11 @@ export function cutMyText(o) {
 }
 
 form.addEventListener('input', render);
+$('reset').addEventListener('click', () => {
+  try { localStorage.removeItem(STORE_KEY); } catch { /* ignore */ }
+  fill(DEFAULTS);
+  render();
+});
 $('copycutmy').addEventListener('click', async (e) => {
   try {
     await navigator.clipboard.writeText($('cutmy').textContent);
