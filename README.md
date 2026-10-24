@@ -4,7 +4,8 @@ Calculator for minimalist rod and acrylic shelf units in the style of the HushLu
 3 tier keyboard stand. Enter width, depth, total height and number of shelves; get a
 parts list, hole positions for the acrylic, assembly steps with clamp heights, and a 3D
 preview.
-![Uploading image.png…]()
+<img width="1499" height="824" alt="image" src="https://github.com/user-attachments/assets/b66d1901-6dc8-4b20-8197-7ed64b58f50f" />
+
 
 ## Construction
 
