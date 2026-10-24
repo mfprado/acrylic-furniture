@@ -16,6 +16,7 @@ export const DEFAULTS = {
   loadKg: 10, // spread load per shelf, used for the sag check
   finish: 'fluted', // 'fluted' or 'flat', only changes the 3D view
   color: '#202d6a', // acrylic tint, only changes the 3D view
+  rod: 'auto', // 'auto' or a stock diameter (6, 8, 10) chosen for looks
 };
 
 // Flange couplings from the Temu listing "1pc 45 Flange Coupling 3/4/5/6/8/10/12Mm Hole +
@@ -79,7 +80,8 @@ export function computeDesign(input) {
   const { width: W, depth: D, height: H, thickness: t } = p;
   const shelves = Math.max(2, Math.round(p.shelves));
 
-  const d = rodDiameter(H, W);
+  const recommended = rodDiameter(H, W);
+  const d = p.rod === 'auto' || p.rod == null ? recommended : Number(p.rod);
   if (!ROD_STOCK_SIZES.includes(d)) throw new Error(`Rod Ø${d} mm is not a stock size`);
   const clamp = clampSize(d);
   const flange = FLANGES[d];
@@ -148,11 +150,13 @@ export function computeDesign(input) {
   if (sag > span / SAG_LIMIT_RATIO)
     warnings.push(`Shelf sags ${sag.toFixed(1)} mm even with ${columns} columns. Use thicker acrylic.`);
   if (clearGap < 60) warnings.push(`Only ${Math.round(clearGap)} mm clear between shelves.`);
+  if (d < recommended)
+    warnings.push(`Ø${d} is thinner than the Ø${recommended} suggested for this size; expect more brace rows and a less rigid frame.`);
   if (braces.length)
     warnings.push(`Added ${braces.length} brace row(s) so no post runs more than ${maxUnbraced} mm unbraced.`);
   if (columns > 2) warnings.push(`Added ${columns - 2} middle column(s) so ${t} mm acrylic stays flat over ${W} mm.`);
 
-  return { input: p, shelves, d, clamp, clampSpec: CLAMPS[d], flange, inset, columns, xs, ys, span, sag, levels, braces, clearGap, postLength, parts, warnings };
+  return { input: p, shelves, d, recommended, clamp, clampSpec: CLAMPS[d], flange, inset, columns, xs, ys, span, sag, levels, braces, clearGap, postLength, parts, warnings };
 }
 
 // Measured heights from the floor, for marking clamp positions during assembly.

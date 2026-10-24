@@ -12,7 +12,7 @@ let framed = null;
 let current = null;
 
 function render() {
-  const input = Object.fromEntries([...new FormData(form)].map(([k, v]) => [k, ['finish', 'color'].includes(k) ? v : Number(v)]));
+  const input = Object.fromEntries([...new FormData(form)].map(([k, v]) => [k, ['finish', 'color', 'rod'].includes(k) ? v : Number(v)]));
   let design;
   try {
     design = computeDesign(input);

@@ -25,3 +25,12 @@ test('tall unit gets brace rows, short one does not', () => {
   assert.equal(tall.parts.clamps, (1 + tall.braces.length) * tall.columns * 2 * 2);
   assert.ok(assemblySteps(tall).some((s) => s.startsWith('Brace row')));
 });
+
+test('user can pick a thicker rod for looks', () => {
+  const auto = computeDesign({});
+  const wide = computeDesign({ rod: '10' });
+  assert.equal(auto.d, 8);
+  assert.equal(wide.d, 10);
+  assert.ok(wide.inset > auto.inset); // bigger clamps push posts further in
+  assert.ok(computeDesign({ rod: '6' }).warnings.some((w) => w.includes('thinner')));
+});
