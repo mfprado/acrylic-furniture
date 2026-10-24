@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { computeDesign, assemblySteps } from '../src/calc.js';
+import { computeDesign, assemblySteps, cutMyOrder } from '../src/calc.js';
 
 test('2 shelf 1200 x 250 x 450 unit', () => {
   const d = computeDesign({ width: 1200, depth: 250, height: 450, shelves: 2, thickness: 8 });
@@ -33,4 +33,13 @@ test('user can pick a thicker rod for looks', () => {
   assert.equal(wide.d, 10);
   assert.ok(wide.inset > auto.inset); // bigger clamps push posts further in
   assert.ok(computeDesign({ rod: '6' }).warnings.some((w) => w.includes('thinner')));
+});
+
+test('Cut My order rounds holes up and lists every hole', () => {
+  const o = cutMyOrder(computeDesign({}));
+  assert.equal(o.holeD, 9); // Ø8 rod + 1 mm, whole mm
+  assert.equal(o.edgeToCentre, 30);
+  assert.equal(o.holes.length, 8);
+  assert.equal(o.layout, 'Edit Holes Individually');
+  assert.ok(cutMyOrder(computeDesign({ thickness: 5 })).notes.some((n) => n.includes('thin')));
 });

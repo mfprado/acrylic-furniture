@@ -1,4 +1,4 @@
-import { computeDesign, assemblySteps, DEFAULTS } from './calc.js';
+import { computeDesign, assemblySteps, cutMyOrder, DEFAULTS } from './calc.js';
 import { createViewer } from './scene.js';
 import { downloadSpec } from './pdf.js';
 
@@ -37,6 +37,7 @@ function render() {
 
   $('holes').textContent = parts.sheets.holes.map(([x, y]) => `(${Math.round(x)}, ${y})`).join('  ');
   $('rodtotal').textContent = `${(parts.rodTotalLength / 1000).toFixed(2)} m of Ø${d} rod in total`;
+  $('cutmy').textContent = cutMyText(cutMyOrder(design));
   $('steps').innerHTML = assemblySteps(design).map((s) => `<li>${s}</li>`).join('');
   $('warnings').innerHTML = design.warnings.map((w) => `<li>${w}</li>`).join('');
 }
@@ -51,8 +52,33 @@ export function partRows({ parts, d }) {
   ];
 }
 
+export function cutMyText(o) {
+  return [
+    `Length            ${o.length} mm`,
+    `Width             ${o.width} mm`,
+    `Thickness         ${o.thickness} mm`,
+    `Quantity          ${o.qty}`,
+    `Polished edges    ${o.polishedEdges ? 'Yes' : 'No'}`,
+    `Drilled holes     Yes, ${o.layout}`,
+    `Hole diameter     ${o.holeD} mm`,
+    `Distance from edge ${o.edgeToCentre} mm to centre (${o.edgeToHoleEdge} mm to hole edge)`,
+    `Holes (x, y from front left, centres):`,
+    ...o.holes.map(([x, y], i) => `  ${String(i + 1).padStart(2)}. ${x}, ${y}`),
+    ...o.notes.map((n) => `! ${n}`),
+  ].join('\n');
+}
+
 form.addEventListener('input', render);
+$('copycutmy').addEventListener('click', async (e) => {
+  try {
+    await navigator.clipboard.writeText($('cutmy').textContent);
+    e.target.textContent = 'Copied';
+  } catch {
+    e.target.textContent = 'Copy failed, select the text above';
+  }
+  setTimeout(() => (e.target.textContent = 'Copy order details'), 1500);
+});
 $('download').addEventListener('click', () => {
-  if (current) downloadSpec(current, partRows(current), assemblySteps(current), viewer.snapshot());
+  if (current) downloadSpec(current, partRows(current), assemblySteps(current), viewer.snapshot(), cutMyText(cutMyOrder(current)));
 });
 render();

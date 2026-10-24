@@ -1,7 +1,7 @@
 // Builds the spec sheet PDF with jsPDF + autotable (loaded as UMD globals in index.html).
 // Built-in Courier keeps the sidebar's monospace look and covers Ø, ×, ° (Latin-1).
 
-export function downloadSpec(design, rows, steps, shot) {
+export function downloadSpec(design, rows, steps, shot, cutMy) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const { input, d } = design;
@@ -59,6 +59,9 @@ export function downloadSpec(design, rows, steps, shot) {
 
   heading('Hole centres per sheet (x, y mm from front left)');
   para(`Ø${design.parts.sheets.holeD} mm: ` + design.parts.sheets.holes.map(([hx, hy]) => `(${Math.round(hx)}, ${hy})`).join('  '));
+
+  heading('Cut My order (per sheet)');
+  cutMy.split('\n').forEach((line) => para(line));
 
   heading('Assembly');
   steps.forEach((s, i) => para(`${i + 1}. ${s}`));

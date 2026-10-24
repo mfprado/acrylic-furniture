@@ -91,7 +91,9 @@ export function computeDesign(input) {
   // sheet edge.
   const reach = CLAMPS[d].len - CLAMPS[d].section;
   const inset = Math.round(reach + d / 2 + 2); // post hole centre from sheet edge
-  const holeD = d + 0.5;
+  // Cut-to-size shops (Cut My: whole mm, ±1 mm tolerance) drill whole millimetres, so round
+  // up to leave at least 1 mm clearance. The collar and clamps cover the gap.
+  const holeD = Math.ceil(d + 1);
 
   // Add post columns along the width until the sheet sag between crossbars is acceptable.
   let columns = 2;
@@ -157,6 +159,41 @@ export function computeDesign(input) {
   if (columns > 2) warnings.push(`Added ${columns - 2} middle column(s) so ${t} mm acrylic stays flat over ${W} mm.`);
 
   return { input: p, shelves, d, recommended, clamp, clampSpec: CLAMPS[d], flange, inset, columns, xs, ys, span, sag, levels, braces, clearGap, postLength, parts, warnings };
+}
+
+// Cut My (cutmy.co.uk) acrylic options, as their cut-to-size form asks for them (checked
+// 2026-10-24). Hole positions are centres; whether their "Distance From Edge" means centre
+// or hole edge is not stated on the page, so both are given.
+export const CUTMY = {
+  thicknesses: { clear: [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30], opal: [3, 5, 10] },
+  minEdge: 8,
+  tolerance: 1,
+  maxLength: 3050,
+  maxWidth: 2030,
+};
+
+export function cutMyOrder(design) {
+  const { parts, inset, input } = design;
+  const s = parts.sheets;
+  const notes = [];
+  if (!CUTMY.thicknesses.clear.includes(s.thickness))
+    notes.push(`${s.thickness} mm is not a Cut My clear acrylic thickness (${CUTMY.thicknesses.clear.join(', ')}).`);
+  if (!CUTMY.thicknesses.opal.includes(s.thickness)) notes.push(`Opal only comes in ${CUTMY.thicknesses.opal.join(', ')} mm.`);
+  if (s.width > CUTMY.maxLength || s.depth > CUTMY.maxWidth) notes.push('Sheet is larger than Cut My can cut.');
+  if (s.thickness < 8 && input.width >= 900) notes.push(`${s.thickness} mm is thin for a ${input.width} mm shelf; 8 or 10 mm recommended.`);
+  return {
+    length: s.width,
+    width: s.depth,
+    thickness: s.thickness,
+    qty: s.qty,
+    polishedEdges: true,
+    holeD: s.holeD,
+    edgeToCentre: inset,
+    edgeToHoleEdge: Math.round((inset - s.holeD / 2) * 10) / 10,
+    layout: s.holes.length === 4 ? 'Corners' : 'Edit Holes Individually',
+    holes: s.holes.map(([x, y]) => [Math.round(x), Math.round(y)]),
+    notes,
+  };
 }
 
 // Measured heights from the floor, for marking clamp positions during assembly.
