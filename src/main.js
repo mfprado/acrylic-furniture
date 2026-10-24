@@ -1,5 +1,5 @@
 import { computeDesign, assemblySteps, cutMyOrder, DEFAULTS } from './calc.js';
-import { createViewer } from './scene.js';
+import { createViewer, renderParts } from './scene.js';
 import { downloadSpec } from './pdf.js';
 
 const form = document.querySelector('#config');
@@ -79,6 +79,6 @@ $('copycutmy').addEventListener('click', async (e) => {
   setTimeout(() => (e.target.textContent = 'Copy order details'), 1500);
 });
 $('download').addEventListener('click', () => {
-  if (current) downloadSpec(current, partRows(current), assemblySteps(current), viewer.snapshot(), cutMyText(cutMyOrder(current)));
+  if (current) downloadSpec(current, partRows(current), assemblySteps(current), viewer.snapshot(), cutMyText(cutMyOrder(current)), renderParts(current));
 });
 render();

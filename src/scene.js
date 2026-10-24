@@ -276,3 +276,61 @@ function buildModel(design) {
   });
   return g;
 }
+
+// --- per-part renders for the PDF ---------------------------------------------------
+// Renders each part on its own, on white, framed to fit. Returns JPEG data URLs.
+
+export function renderParts(design) {
+  const W_PX = 640, H_PX = 480;
+  const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+  r.setSize(W_PX, H_PX);
+  r.toneMapping = THREE.ACESFilmicToneMapping;
+  r.toneMappingExposure = 0.75;
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xffffff);
+  const pmrem = new THREE.PMREMGenerator(r);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  scene.environmentIntensity = 0.7;
+  const sun = new THREE.DirectionalLight(0xffffff, 0.9);
+  scene.add(sun);
+  const cam = new THREE.PerspectiveCamera(28, W_PX / H_PX, 0.1, 50000);
+
+  const shot = (obj, dir = new THREE.Vector3(1, 0.9, 1.3)) => {
+    scene.add(obj);
+    const box = new THREE.Box3().setFromObject(obj);
+    const sphere = box.getBoundingSphere(new THREE.Sphere());
+    const dist = (sphere.radius / Math.sin(THREE.MathUtils.degToRad(cam.fov / 2))) * 1.05;
+    cam.position.copy(sphere.center).addScaledVector(dir.normalize(), dist);
+    cam.lookAt(sphere.center);
+    sun.position.copy(cam.position).add(new THREE.Vector3(0, dist, 0));
+    r.render(scene, cam);
+    const url = r.domElement.toDataURL('image/jpeg', 0.9);
+    scene.remove(obj);
+    return { url, w: W_PX, h: H_PX };
+  };
+
+  const { input, d, clampSpec, flange, parts } = design;
+  acrylic.color.set(input.color ?? '#202d6a');
+
+  // Sheet with its real holes, seen from above at an angle.
+  const s = parts.sheets;
+  const outline = new THREE.Shape();
+  outline.moveTo(0, 0).lineTo(s.width, 0).lineTo(s.width, s.depth).lineTo(0, s.depth).closePath();
+  s.holes.forEach(([x, y]) => outline.holes.push(circlePath(x, y, s.holeD / 2)));
+  const sheetMesh = mesh(extrudeUp(outline, s.thickness, 0.3), acrylic);
+  sheetMesh.position.set(-s.width / 2, 0, s.depth / 2);
+
+  const rodPiece = rod(d, d * 30);
+  rodPiece.rotation.z = Math.PI / 3;
+
+  const out = {
+    sheet: shot(sheetMesh, new THREE.Vector3(0.35, 1.4, 1)),
+    rod: shot(rodPiece, new THREE.Vector3(0, 0.3, 1)),
+    clamp: shot(crossClamp(d, clampSpec)),
+    flange: shot(flangeFoot(d, flange)),
+    collar: shot(collar(d)),
+  };
+  pmrem.dispose();
+  r.dispose();
+  return out;
+}
