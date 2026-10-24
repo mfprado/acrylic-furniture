@@ -84,7 +84,6 @@ function render() {
     .map(([name, spec, qty]) => `<tr><td>${name}</td><td>${spec}</td><td>${qty}</td></tr>`)
     .join('');
   $('rodtotal').textContent = t.total(design);
-  $('steps').innerHTML = t.steps(design).map((s) => `<li>${s}</li>`).join('');
   $('warnings').innerHTML = design.warnings.map((w) => `<li>${w}</li>`).join('');
 
   if (tab === 'shelf') {
@@ -135,13 +134,29 @@ $('copycutmy').addEventListener('click', async (e) => {
   }
   setTimeout(() => (e.target.textContent = 'Copy order details'), 1500);
 });
-$('download').addEventListener('click', () => {
+$('download').addEventListener('click', async (e) => {
   if (!current) return;
+  const btn = e.currentTarget;
+  const label = btn.textContent;
+  btn.textContent = 'Building PDF…';
+  btn.disabled = true;
+  await new Promise((r) => setTimeout(r, 30)); // let the label paint before the heavy work
+  try {
+    buildPdf();
+  } catch (err) {
+    $('warnings').innerHTML = `<li>PDF failed: ${err.message}</li>`;
+  } finally {
+    btn.textContent = label;
+    btn.disabled = false;
+  }
+});
+
+function buildPdf() {
   const t = TABS[tab];
   if (tab === 'shelf') {
     downloadSpec(current, t.rows(current), t.steps(current), viewer.snapshot(), cutMyText(cutMyOrder(current)), renderParts(current), null, renderSteps(current, shelfStepTags(current)));
   } else {
     downloadSpec(current, t.rows(current), t.steps(current), viewer.snapshot(), null, null, t.summary(current), renderSteps(current, deskStepTags(current)));
   }
-});
+}
 showTab(tab);

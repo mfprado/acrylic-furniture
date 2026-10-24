@@ -81,7 +81,7 @@ export function downloadSpec(design, rows, steps, shot, cutMy, partShots, summar
     steps.forEach((s, i) => para(`${i + 1}. ${s}`));
   }
 
-  doc.save(`${desk ? 'desk' : 'shelf'}-${input.width}x${input.depth}x${input.height}.pdf`);
+  deliver(doc, `${desk ? 'desk' : 'shelf'}-${input.width}x${input.depth}x${input.height}.pdf`);
 }
 
 // --- parts detail: one block per part, render on the left, dimensions on the right ------
@@ -234,4 +234,27 @@ function assemblyPages(doc, steps, shots) {
     const lines = doc.splitTextToSize(text, imgW);
     doc.text(lines.slice(0, 4), M, imgTop + imgH + 4);
   });
+}
+
+// Desktop browsers download straight away. Phones often ignore a scripted download
+// (iOS Safari, in-app browsers), so there we hand the file to the share sheet, or failing
+// that open it in a new tab where it can be saved.
+function deliver(doc, name) {
+  const mobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform));
+  if (!mobile) {
+    doc.save(name);
+    return;
+  }
+  const blob = doc.output('blob');
+  const file = new File([blob], name, { type: 'application/pdf' });
+  if (navigator.canShare?.({ files: [file] })) {
+    navigator.share({ files: [file], title: name }).catch(() => openBlob(blob));
+    return;
+  }
+  openBlob(blob);
+}
+
+function openBlob(blob) {
+  const url = URL.createObjectURL(blob);
+  if (!window.open(url, '_blank')) location.href = url;
 }

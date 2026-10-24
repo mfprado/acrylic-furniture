@@ -373,6 +373,7 @@ export function renderParts(design) {
   };
   pmrem.dispose();
   r.dispose();
+  r.forceContextLoss();
   return out;
 }
 
@@ -588,5 +589,6 @@ export function renderSteps(design, stepTags) {
   });
   lines.forEach(([, l]) => l.geometry.dispose());
   r.dispose();
+  r.forceContextLoss();
   return out;
 }
