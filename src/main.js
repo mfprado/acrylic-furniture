@@ -1,6 +1,6 @@
 import { computeDesign, assemblySteps, cutMyOrder, DEFAULTS } from './calc.js';
 import { computeDesk, deskRows, deskSteps, DESK_DEFAULTS } from './desk.js';
-import { createViewer, renderParts } from './scene.js';
+import { createViewer, renderParts, renderSteps, shelfStepTags, deskStepTags } from './scene.js';
 import { downloadSpec } from './pdf.js';
 
 const viewer = createViewer(document.querySelector('#viewer'));
@@ -139,9 +139,9 @@ $('download').addEventListener('click', () => {
   if (!current) return;
   const t = TABS[tab];
   if (tab === 'shelf') {
-    downloadSpec(current, t.rows(current), t.steps(current), viewer.snapshot(), cutMyText(cutMyOrder(current)), renderParts(current));
+    downloadSpec(current, t.rows(current), t.steps(current), viewer.snapshot(), cutMyText(cutMyOrder(current)), renderParts(current), null, renderSteps(current, shelfStepTags(current)));
   } else {
-    downloadSpec(current, t.rows(current), t.steps(current), viewer.snapshot(), null, null, t.summary(current));
+    downloadSpec(current, t.rows(current), t.steps(current), viewer.snapshot(), null, null, t.summary(current), renderSteps(current, deskStepTags(current)));
   }
 });
 showTab(tab);

@@ -1,7 +1,7 @@
 // Builds the spec sheet PDF with jsPDF + autotable (loaded as UMD globals in index.html).
 // Built-in Courier keeps the sidebar's monospace look and covers Ø, ×, ° (Latin-1).
 
-export function downloadSpec(design, rows, steps, shot, cutMy, partShots, summary) {
+export function downloadSpec(design, rows, steps, shot, cutMy, partShots, summary, stepShots) {
   const desk = design.kind === 'desk';
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
@@ -74,8 +74,12 @@ export function downloadSpec(design, rows, steps, shot, cutMy, partShots, summar
     cutMy.split('\n').forEach((line) => para(line));
 
   }
-  heading('Assembly');
-  steps.forEach((s, i) => para(`${i + 1}. ${s}`));
+  if (stepShots) {
+    assemblyPages(doc, steps, stepShots);
+  } else {
+    heading('Assembly');
+    steps.forEach((s, i) => para(`${i + 1}. ${s}`));
+  }
 
   doc.save(`${desk ? 'desk' : 'shelf'}-${input.width}x${input.depth}x${input.height}.pdf`);
 }
@@ -187,4 +191,47 @@ function sheetDrawing(doc, x0, y0, w, sh, inset) {
   }
   doc.text(`Top view, mm. Holes Ø${sh.holeD}, centres ${inset} from edges. Front edge at top.`, ox, oy + H + 11);
   return oy + H + 13;
+}
+
+// --- IKEA-style assembly pages: two steps per page, big number, parts box, drawing ------
+
+function assemblyPages(doc, steps, shots) {
+  const M = 15;
+  const pageW = doc.internal.pageSize.getWidth();
+  const slotH = 133;
+  steps.forEach((text, i) => {
+    const slot = i % 2;
+    if (slot === 0) doc.addPage();
+    const top = M + slot * (slotH + 2);
+    const shot = shots[i];
+
+    if (slot === 1) doc.setDrawColor(200).setLineWidth(0.2).line(M, top - 3, pageW - M, top - 3);
+
+    // big step number
+    doc.setFont('helvetica', 'bold').setFontSize(34).setTextColor(20);
+    doc.text(String(i + 1), M, top + 12);
+
+    // parts box: what you need for this step
+    const parts = shot?.parts ?? [];
+    const lineH = 4.6;
+    const boxH = parts.length ? 6 + parts.length * lineH : 0;
+    if (parts.length) {
+      const boxX = M + 22;
+      doc.setDrawColor(30).setLineWidth(0.35).roundedRect(boxX, top, 92, boxH, 1.5, 1.5);
+      doc.setFont('courier', 'bold').setFontSize(8.5).setTextColor(20);
+      parts.forEach(([label, qty], k) => doc.text(`${qty}x  ${label}`, boxX + 3, top + 5.5 + k * lineH));
+    }
+
+    // drawing
+    const imgTop = top + Math.max(16, boxH + 3);
+    const imgW = pageW - 2 * M;
+    const imgH = Math.min(top + slotH - 18 - imgTop, (imgW * shot.h) / shot.w);
+    const drawW = (imgH * shot.w) / shot.h;
+    doc.addImage(shot.url, 'JPEG', M + (imgW - drawW) / 2, imgTop, drawW, imgH);
+
+    // short caption, IKEA keeps words to a minimum
+    doc.setFont('courier', 'normal').setFontSize(8).setTextColor(60);
+    const lines = doc.splitTextToSize(text, imgW);
+    doc.text(lines.slice(0, 4), M, imgTop + imgH + 4);
+  });
 }

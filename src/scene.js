@@ -232,53 +232,90 @@ function sheet(W, D, t, finish) {
 // Design coordinates: x along width, y along depth, heights from the floor.
 // three.js: x = width, y = up, z = depth. The unit is centred on the origin.
 
+// Every object is tagged with the assembly step it belongs to (userData.tag) and a part
+// label (userData.part), so the PDF can draw IKEA-style step pictures and count parts.
+export function shelfRows(design) {
+  const { levels, braces, input, clamp } = design;
+  const t = input.thickness;
+  return [
+    ...levels.map((top, i) => ({ i, key: top, under: top - t - clamp.hi / 2, over: top + clamp.hi / 2, top })),
+    ...braces.map((h) => ({ i: -1, key: h, under: h - clamp.hi / 2, over: h + clamp.hi / 2 })),
+  ].sort((a, b) => a.key - b.key);
+}
+
 function buildModel(design) {
   if (design.kind === 'desk') return buildDesk(design);
   const g = new THREE.Group();
-  const { input, d, clamp, clampSpec, flange, xs, ys, levels, postLength } = design;
+  const { input, d, clampSpec, flange, xs, ys, postLength } = design;
   const { width: W, depth: D, thickness: t, finish = 'fluted' } = input;
   const cx = (x) => x - W / 2;
   const cz = (y) => y - D / 2;
   const reach = clampSpec.len - clampSpec.section;
-  const add = (obj, x, y, z) => { obj.position.set(x, y, z); g.add(obj); return obj; };
+  let tag = 'posts';
+  const add = (obj, part, x, y, z) => {
+    obj.position.set(x, y, z);
+    obj.userData = { tag, part };
+    g.add(obj);
+    return obj;
+  };
 
   for (const x of xs) for (const y of ys) {
-    add(rod(d, postLength), cx(x), 4 + postLength / 2, cz(y));
-    add(flangeFoot(d, flange), cx(x), 0, cz(y));
-    add(collar(d), cx(x), flange.height + t, cz(y));
+    tag = 'posts';
+    add(rod(d, postLength), `Post Ø${d} × ${postLength} mm`, cx(x), 4 + postLength / 2, cz(y));
+    add(flangeFoot(d, flange), `Flange coupling Ø${d}`, cx(x), 0, cz(y));
+    tag = 'bottom';
+    add(collar(d), `Shaft collar Ø${d}`, cx(x), flange.height + t, cz(y));
   }
 
-  // Shelves carry a sheet between the two clamp rows; brace rows stack the clamps directly.
-  const rows = [
-    ...levels.map((top, i) => ({ i, under: top - t - clamp.hi / 2, over: top + clamp.hi / 2, top })),
-    ...design.braces.map((h) => ({ i: -1, under: h - clamp.hi / 2, over: h + clamp.hi / 2 })),
-  ];
-  rows.forEach(({ i, under, over, top }) => {
-    if (i >= 0) add(sheet(W, D, t, finish), 0, top - t, 0);
-    if (i === 0) return;
-
+  // Rows bottom to top. Shelves carry a sheet between the two clamp rows; brace rows
+  // stack the clamps directly. Row 0 is the bottom sheet on the feet.
+  shelfRows(design).forEach(({ i, under, over, top }, j) => {
+    if (i === 0) {
+      tag = 'bottom';
+      add(sheet(W, D, t, finish), 'Acrylic sheet', 0, top - t, 0);
+      return;
+    }
+    tag = `r${j}a`;
     xs.forEach((x, col) => {
       // Mirror-symmetric about the centre: end crossbars face outward, middle ones face
       // the centre of the shelf.
       const n = xs.length - 1;
       const inX = col === 0 ? -1 : col === n ? 1 : x < W / 2 ? 1 : -1;
-      const bar = add(rod(d, D), cx(x) + inX * reach, under, 0);
+      const bar = add(rod(d, D), `Crossbar Ø${d} × ${D} mm`, cx(x) + inX * reach, under, 0);
       bar.rotation.x = Math.PI / 2;
+      ys.forEach((y) => {
+        const lower = add(crossClamp(d, clampSpec), `Cross clamp Ø${d}`, cx(x), under, cz(y));
+        lower.rotation.y = inX > 0 ? 0 : Math.PI;
+      });
+    });
+    tag = `r${j}b`;
+    if (i > 0) add(sheet(W, D, t, finish), 'Acrylic sheet', 0, top - t, 0);
+    xs.forEach((x) => {
       ys.forEach((y, row) => {
         const inZ = row === 0 ? -1 : 1;
-        const lower = add(crossClamp(d, clampSpec), cx(x), under, cz(y));
-        lower.rotation.y = inX > 0 ? 0 : Math.PI;
-        const upper = add(crossClamp(d, clampSpec), cx(x), over, cz(y));
+        const upper = add(crossClamp(d, clampSpec), `Cross clamp Ø${d}`, cx(x), over, cz(y));
         upper.rotation.y = inZ > 0 ? -Math.PI / 2 : Math.PI / 2;
       });
     });
     ys.forEach((y, row) => {
       const inZ = row === 0 ? -1 : 1;
-      const rail = add(rod(d, W), 0, over, cz(y) + inZ * reach);
+      const rail = add(rod(d, W), `Rail Ø${d} × ${W} mm`, 0, over, cz(y) + inZ * reach);
       rail.rotation.z = Math.PI / 2;
     });
   });
   return g;
+}
+
+// Which model tags are new in each written assembly step (parallel to assemblySteps).
+export function shelfStepTags(design) {
+  const tags = [['posts'], ['bottom']];
+  shelfRows(design).forEach(({ i }, j) => {
+    if (i === 0) return;
+    if (i > 0) tags.push([`r${j}a`], [`r${j}b`]);
+    else tags.push([`r${j}a`, `r${j}b`]);
+  });
+  tags.push([]);
+  return tags;
 }
 
 // --- per-part renders for the PDF ---------------------------------------------------
@@ -398,57 +435,52 @@ function levellingFoot(p) {
 
 function buildDesk(design) {
   const g = new THREE.Group();
-  const { input, p, railZ, legLength, stretcherZ, withStretchers, midRail, footHeight: fh } = design;
+  const { input, p, size, railZ, legLength, stretcherZ, withStretchers, midRail, footHeight: fh } = design;
   const { width: W, depth: D, topThickness: tt } = input;
   const frame = new THREE.MeshPhysicalMaterial({ color: input.frameColor ?? '#c4c8cc', metalness: 0.8, roughness: 0.42 });
   const X = (x) => x - W / 2;
   const Z = (y) => y - D / 2;
-  const add = (o) => { g.add(o); return o; };
+  const name = `${size}${size}`;
+  let tag = 'legs';
+  const add = (o, part) => { o.userData = { tag, part }; g.add(o); return o; };
 
   // along x: rotate so local z points to +x
-  const barX = (len, x0, y, z) => {
-    const b = add(profileBar(p, len, frame));
+  const barX = (len, x0, y, z, part) => {
+    const b = add(profileBar(p, len, frame), part);
     b.rotation.y = Math.PI / 2;
     b.position.set(X(x0), z + p / 2, Z(y));
-    return b;
   };
   // along y (front to back)
-  const barY = (len, x, y0, z) => {
-    const b = add(profileBar(p, len, frame));
+  const barY = (len, x, y0, z, part) => {
+    const b = add(profileBar(p, len, frame), part);
     b.position.set(X(x), z + p / 2, Z(y0));
-    return b;
   };
   // vertical
-  const barZ = (len, x, y, z0) => {
-    const b = add(profileBar(p, len, frame));
+  const barZ = (len, x, y, z0, part) => {
+    const b = add(profileBar(p, len, frame), part);
     b.rotation.x = -Math.PI / 2;
     b.position.set(X(x), z0, Z(y));
-    return b;
   };
 
   const cornersXY = [[p / 2, p / 2], [W - p / 2, p / 2], [p / 2, D - p / 2], [W - p / 2, D - p / 2]];
-  for (const [x, y] of cornersXY) {
-    barZ(legLength, x, y, fh);
-    const foot = add(levellingFoot(p));
-    foot.position.set(X(x), 0, Z(y));
-  }
+  tag = 'legs';
+  for (const [x, y] of cornersXY) barZ(legLength, x, y, fh, `Leg ${name} × ${legLength} mm`);
 
-  // top frame
-  barX(W, 0, p / 2, railZ);
-  barX(W, 0, D - p / 2, railZ);
-  barY(D - 2 * p, p / 2, p, railZ);
-  barY(D - 2 * p, W - p / 2, p, railZ);
-  if (midRail) barY(D - 2 * p, W / 2, p, railZ);
-
-  if (withStretchers) {
-    barY(D - 2 * p, p / 2, p, stretcherZ);
-    barY(D - 2 * p, W - p / 2, p, stretcherZ);
-    barX(W - 2 * p, p, D - p / 2, stretcherZ);
+  tag = 'shortRails';
+  barY(D - 2 * p, p / 2, p, railZ, `Short rail ${name} × ${D - 2 * p} mm`);
+  barY(D - 2 * p, W - p / 2, p, railZ, `Short rail ${name} × ${D - 2 * p} mm`);
+  tag = 'longRails';
+  barX(W, 0, p / 2, railZ, `Long rail ${name} × ${W} mm`);
+  barX(W, 0, D - p / 2, railZ, `Long rail ${name} × ${W} mm`);
+  if (midRail) {
+    tag = 'midRail';
+    barY(D - 2 * p, W / 2, p, railZ, `Short rail ${name} × ${D - 2 * p} mm`);
   }
 
   // brackets where the short rails meet the long rails (inside corners, under the rails)
+  tag = 'brackets';
   for (const [x, y] of cornersXY) {
-    const br = add(bracketL(p, frame));
+    const br = add(bracketL(p, frame), `Corner bracket ${name}`);
     const inX = x < W / 2 ? 1 : -1;
     const inY = y < D / 2 ? 1 : -1;
     br.position.set(X(x + inX * p * 0.5), railZ - p * 0.9, Z(y + inY * p * 0.5));
@@ -456,15 +488,105 @@ function buildDesk(design) {
     br.rotation.x = Math.PI;
   }
 
-  // top
+  if (withStretchers) {
+    tag = 'stretchers';
+    barY(D - 2 * p, p / 2, p, stretcherZ, `Stretcher ${name} × ${D - 2 * p} mm`);
+    barY(D - 2 * p, W - p / 2, p, stretcherZ, `Stretcher ${name} × ${D - 2 * p} mm`);
+    barX(W - 2 * p, p, D - p / 2, stretcherZ, `Stretcher ${name} × ${W - 2 * p} mm`);
+  }
+
+  tag = 'feet';
+  for (const [x, y] of cornersXY) {
+    const foot = add(levellingFoot(p), `Levelling foot ${design.prof.footThread}`);
+    foot.position.set(X(x), 0, Z(y));
+  }
+
+  tag = 'top';
   const wood = new THREE.MeshStandardMaterial({ color: 0xd8c3a0, roughness: 0.8 });
-  const ply = mesh(new THREE.BoxGeometry(W, input.topFinish === 'linoleum' ? tt - 2 : tt, D), wood);
-  ply.position.set(0, railZ + p + (input.topFinish === 'linoleum' ? (tt - 2) / 2 : tt / 2), 0);
-  add(ply);
-  if (input.topFinish === 'linoleum') {
-    const lino = mesh(new THREE.BoxGeometry(W, 2, D), new THREE.MeshStandardMaterial({ color: input.topColor ?? '#c9b8a3', roughness: 0.9 }));
-    lino.position.set(0, railZ + p + tt - 1, 0);
-    add(lino);
+  const lino = input.topFinish === 'linoleum';
+  const ply = add(mesh(new THREE.BoxGeometry(W, lino ? tt - 2 : tt, D), wood), `Plywood top ${W} × ${D} mm`);
+  ply.position.set(0, railZ + p + (lino ? (tt - 2) / 2 : tt / 2), 0);
+  if (lino) {
+    const sheetL = add(mesh(new THREE.BoxGeometry(W, 2, D), new THREE.MeshStandardMaterial({ color: input.topColor ?? '#c9b8a3', roughness: 0.9 })), 'Linoleum');
+    sheetL.position.set(0, railZ + p + tt - 1, 0);
   }
   return g;
+}
+
+// Which model tags are new in each written desk step (parallel to deskSteps).
+export function deskStepTags(design) {
+  return [
+    ['legs'],
+    ['shortRails'],
+    ['longRails'],
+    ...(design.midRail ? [['midRail']] : []),
+    ['brackets'],
+    ...(design.withStretchers ? [['stretchers']] : []),
+    [], // gussets (not modelled)
+    ['feet'],
+    [], // mounting tabs (not modelled)
+    ['top'],
+    [],
+  ];
+}
+
+// --- IKEA-style step pictures ------------------------------------------------------
+// White fills with black outlines. Parts already fitted are drawn pale; the parts added
+// in the step are drawn with dark outlines and a light grey fill. Same camera for every
+// step so the pages read as a sequence. Returns [{ url, w, h, parts: [[label, qty]] }].
+
+export function renderSteps(design, stepTags) {
+  // Lower resolution keeps the 1 px outlines visibly bold once placed on the page.
+  const W_PX = 1000, H_PX = 700;
+  const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+  r.setSize(W_PX, H_PX);
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xffffff);
+  const cam = new THREE.PerspectiveCamera(26, W_PX / H_PX, 1, 50000);
+
+  const flat = { ...design, input: { ...design.input, finish: 'flat' } };
+  const model = buildModel(flat);
+  scene.add(model);
+
+  // Soft shading so round rods still read as solid (their sides produce no edge lines).
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x9a9a9a, 2.2));
+  const offset = { polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 };
+  const oldFill = new THREE.MeshLambertMaterial({ color: 0xf2f2f2, ...offset });
+  const newFill = new THREE.MeshLambertMaterial({ color: 0xb8b8b8, ...offset });
+  const oldLine = new THREE.LineBasicMaterial({ color: 0x9a9a9a });
+  const newLine = new THREE.LineBasicMaterial({ color: 0x000000 });
+  const lines = [];
+  model.traverse((o) => {
+    if (!o.isMesh) return;
+    o.castShadow = o.receiveShadow = false;
+    const l = new THREE.LineSegments(new THREE.EdgesGeometry(o.geometry, 28), oldLine);
+    o.add(l);
+    lines.push([o, l]);
+  });
+
+  const sphere = new THREE.Box3().setFromObject(model).getBoundingSphere(new THREE.Sphere());
+  const dist = (sphere.radius / Math.sin(THREE.MathUtils.degToRad(cam.fov / 2))) * 0.72;
+  cam.position.copy(sphere.center).addScaledVector(new THREE.Vector3(0.62, 0.5, 0.9).normalize(), dist);
+  cam.lookAt(sphere.center);
+
+  const shown = new Set();
+  const out = stepTags.map((fresh) => {
+    fresh.forEach((t) => shown.add(t));
+    const counts = new Map();
+    for (const child of model.children) {
+      const { tag, part } = child.userData;
+      child.visible = shown.has(tag);
+      const isNew = fresh.includes(tag);
+      if (isNew && part) counts.set(part, (counts.get(part) ?? 0) + 1);
+      child.traverse((o) => {
+        if (o.isMesh) o.material = isNew ? newFill : oldFill;
+        if (o.isLineSegments) o.material = isNew ? newLine : oldLine;
+      });
+    }
+    r.render(scene, cam);
+    return { url: r.domElement.toDataURL('image/jpeg', 0.85), w: W_PX, h: H_PX, parts: [...counts] };
+  });
+  lines.forEach(([, l]) => l.geometry.dispose());
+  r.dispose();
+  return out;
 }
