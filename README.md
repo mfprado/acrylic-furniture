@@ -39,3 +39,8 @@ Tests: `node --test`
 - Clamps on that listing only go to 10 mm bore, so rods are limited to Ø6, 8, 10.
 - Sag check treats fluted acrylic as solid sheet of the same thickness; fluted is stiffer
   along the flutes, weaker across.
+
+## Support
+
+This project is free and open source. If it helped you build something, you can
+[buy me a coffee on Cafecito](https://cafecito.app/mfprado).
