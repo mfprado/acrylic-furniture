@@ -43,3 +43,17 @@ test('Cut My order rounds holes up and lists every hole', () => {
   assert.equal(o.layout, 'Edit Holes Individually');
   assert.ok(cutMyOrder(computeDesign({ thickness: 5 })).notes.some((n) => n.includes('thin')));
 });
+
+import { computeDesk, deskRows, deskSteps } from '../src/desk.js';
+
+test('profile desk matches the CPlot layout', () => {
+  const d = computeDesk({});
+  assert.equal(d.size, 30); // 1220 x 740 -> 3030
+  assert.equal(d.parts.cuts.find((c) => c.role.startsWith('Leg')).qty, 4);
+  assert.equal(d.legLength, 740 - 18 - 30 - 15);
+  assert.equal(d.parts.tabs, 12); // CPlot uses 12 mounting tabs on a 48 x 24 in top
+  assert.ok(deskRows(d).length >= 8);
+  assert.ok(deskSteps(d).length >= 8);
+  assert.ok(computeDesk({ width: 1800 }).midRail);
+  assert.equal(computeDesk({ stretchers: 'no' }).parts.cuts.length, 3);
+});

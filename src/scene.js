@@ -79,8 +79,11 @@ export function createViewer(container) {
       sun.shadow.camera.updateProjectionMatrix();
       sun.position.set(size * 0.6, size * 2, size * 1.2);
       if (keepCamera) return;
-      controls.target.set(0, H / 2, 0);
-      camera.position.set(size * 0.75, H * 0.9 + size * 0.35, size * 1.05);
+      // Fit the whole model in view from a three-quarter angle, whatever its proportions.
+      const sphere = new THREE.Box3().setFromObject(model).getBoundingSphere(new THREE.Sphere());
+      const fit = sphere.radius / Math.sin(THREE.MathUtils.degToRad(camera.fov / 2)) / Math.min(1, camera.aspect);
+      controls.target.copy(sphere.center);
+      camera.position.copy(sphere.center).addScaledVector(new THREE.Vector3(0.62, 0.42, 0.9).normalize(), fit * 1.02);
     },
   };
 }
@@ -230,6 +233,7 @@ function sheet(W, D, t, finish) {
 // three.js: x = width, y = up, z = depth. The unit is centred on the origin.
 
 function buildModel(design) {
+  if (design.kind === 'desk') return buildDesk(design);
   const g = new THREE.Group();
   const { input, d, clamp, clampSpec, flange, xs, ys, levels, postLength } = design;
   const { width: W, depth: D, thickness: t, finish = 'fluted' } = input;
@@ -333,4 +337,134 @@ export function renderParts(design) {
   pmrem.dispose();
   r.dispose();
   return out;
+}
+
+// --- profile desk -------------------------------------------------------------------
+
+// T-slot cross-section: square with a slot centred on each face and a centre bore.
+function tslotShape(p) {
+  const h = p / 2;
+  const sw = p * 0.3; // slot opening
+  const sd = p * 0.28; // slot depth
+  const s = new THREE.Shape();
+  const pts = [];
+  // walk the outline clockwise, notching each face
+  const face = (ax, ay, bx, by, nx, ny) => {
+    const mx = (ax + bx) / 2, my = (ay + by) / 2;
+    const tx = (bx - ax) / p, ty = (by - ay) / p;
+    pts.push([ax, ay]);
+    pts.push([mx - tx * sw / 2, my - ty * sw / 2]);
+    pts.push([mx - tx * sw / 2 - nx * sd, my - ty * sw / 2 - ny * sd]);
+    pts.push([mx + tx * sw / 2 - nx * sd, my + ty * sw / 2 - ny * sd]);
+    pts.push([mx + tx * sw / 2, my + ty * sw / 2]);
+  };
+  face(-h, -h, h, -h, 0, -1);
+  face(h, -h, h, h, 1, 0);
+  face(h, h, -h, h, 0, 1);
+  face(-h, h, -h, -h, -1, 0);
+  s.moveTo(...pts[0]);
+  pts.slice(1).forEach((pt) => s.lineTo(...pt));
+  s.closePath();
+  s.holes.push(circlePath(0, 0, p * 0.11));
+  return s;
+}
+
+// Profile of length len along local +z, section centred on x/y.
+function profileBar(p, len, mat) {
+  const geo = new THREE.ExtrudeGeometry(tslotShape(p), { depth: len, bevelEnabled: false, curveSegments: 12 });
+  return mesh(geo, mat);
+}
+
+function bracketL(p, mat) {
+  const g = new THREE.Group();
+  const t = Math.max(2.5, p * 0.12);
+  const a = mesh(new THREE.BoxGeometry(p * 0.9, t, p * 0.9), mat);
+  a.position.set(0, t / 2, p * 0.45);
+  const b = mesh(new THREE.BoxGeometry(p * 0.9, p * 0.9, t), mat);
+  b.position.set(0, p * 0.45, t / 2);
+  g.add(a, b);
+  return g;
+}
+
+function levellingFoot(p) {
+  const g = new THREE.Group();
+  const pad = mesh(new THREE.CylinderGeometry(p * 0.7, p * 0.75, 6, 32), dark);
+  pad.position.y = 3;
+  const stem = mesh(new THREE.CylinderGeometry(p * 0.14, p * 0.14, 12, 16), chrome);
+  stem.position.y = 12;
+  g.add(pad, stem);
+  return g;
+}
+
+function buildDesk(design) {
+  const g = new THREE.Group();
+  const { input, p, railZ, legLength, stretcherZ, withStretchers, midRail, footHeight: fh } = design;
+  const { width: W, depth: D, topThickness: tt } = input;
+  const frame = new THREE.MeshPhysicalMaterial({ color: input.frameColor ?? '#c4c8cc', metalness: 0.8, roughness: 0.42 });
+  const X = (x) => x - W / 2;
+  const Z = (y) => y - D / 2;
+  const add = (o) => { g.add(o); return o; };
+
+  // along x: rotate so local z points to +x
+  const barX = (len, x0, y, z) => {
+    const b = add(profileBar(p, len, frame));
+    b.rotation.y = Math.PI / 2;
+    b.position.set(X(x0), z + p / 2, Z(y));
+    return b;
+  };
+  // along y (front to back)
+  const barY = (len, x, y0, z) => {
+    const b = add(profileBar(p, len, frame));
+    b.position.set(X(x), z + p / 2, Z(y0));
+    return b;
+  };
+  // vertical
+  const barZ = (len, x, y, z0) => {
+    const b = add(profileBar(p, len, frame));
+    b.rotation.x = -Math.PI / 2;
+    b.position.set(X(x), z0, Z(y));
+    return b;
+  };
+
+  const cornersXY = [[p / 2, p / 2], [W - p / 2, p / 2], [p / 2, D - p / 2], [W - p / 2, D - p / 2]];
+  for (const [x, y] of cornersXY) {
+    barZ(legLength, x, y, fh);
+    const foot = add(levellingFoot(p));
+    foot.position.set(X(x), 0, Z(y));
+  }
+
+  // top frame
+  barX(W, 0, p / 2, railZ);
+  barX(W, 0, D - p / 2, railZ);
+  barY(D - 2 * p, p / 2, p, railZ);
+  barY(D - 2 * p, W - p / 2, p, railZ);
+  if (midRail) barY(D - 2 * p, W / 2, p, railZ);
+
+  if (withStretchers) {
+    barY(D - 2 * p, p / 2, p, stretcherZ);
+    barY(D - 2 * p, W - p / 2, p, stretcherZ);
+    barX(W - 2 * p, p, D - p / 2, stretcherZ);
+  }
+
+  // brackets where the short rails meet the long rails (inside corners, under the rails)
+  for (const [x, y] of cornersXY) {
+    const br = add(bracketL(p, frame));
+    const inX = x < W / 2 ? 1 : -1;
+    const inY = y < D / 2 ? 1 : -1;
+    br.position.set(X(x + inX * p * 0.5), railZ - p * 0.9, Z(y + inY * p * 0.5));
+    br.rotation.y = Math.atan2(inX, inY);
+    br.rotation.x = Math.PI;
+  }
+
+  // top
+  const wood = new THREE.MeshStandardMaterial({ color: 0xd8c3a0, roughness: 0.8 });
+  const ply = mesh(new THREE.BoxGeometry(W, input.topFinish === 'linoleum' ? tt - 2 : tt, D), wood);
+  ply.position.set(0, railZ + p + (input.topFinish === 'linoleum' ? (tt - 2) / 2 : tt / 2), 0);
+  add(ply);
+  if (input.topFinish === 'linoleum') {
+    const lino = mesh(new THREE.BoxGeometry(W, 2, D), new THREE.MeshStandardMaterial({ color: input.topColor ?? '#c9b8a3', roughness: 0.9 }));
+    lino.position.set(0, railZ + p + tt - 1, 0);
+    add(lino);
+  }
+  return g;
 }

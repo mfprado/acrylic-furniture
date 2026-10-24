@@ -1,7 +1,8 @@
 // Builds the spec sheet PDF with jsPDF + autotable (loaded as UMD globals in index.html).
 // Built-in Courier keeps the sidebar's monospace look and covers Ø, ×, ° (Latin-1).
 
-export function downloadSpec(design, rows, steps, shot, cutMy, partShots) {
+export function downloadSpec(design, rows, steps, shot, cutMy, partShots, summary) {
+  const desk = design.kind === 'desk';
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const { input, d } = design;
@@ -27,10 +28,11 @@ export function downloadSpec(design, rows, steps, shot, cutMy, partShots) {
   };
 
   doc.setFont('courier', 'bold').setFontSize(16).setTextColor(30);
-  doc.text('ACRYLIC FURNITURE', M, y);
+  doc.text(desk ? 'PROFILE DESK' : 'ACRYLIC FURNITURE', M, y);
   y += 6;
   doc.setFont('courier', 'normal').setFontSize(9).setTextColor(90);
-  doc.text(`${input.width} × ${input.depth} × ${input.height} mm · ${design.shelves} shelves · Ø${d} rods · ${new Date().toISOString().slice(0, 10)}`, M, y);
+  const sub = desk ? `${design.size}${design.size} profile` : `${design.shelves} shelves · Ø${d} rods`;
+  doc.text(`${input.width} × ${input.depth} × ${input.height} mm · ${sub} · ${new Date().toISOString().slice(0, 10)}`, M, y);
   y += 6;
 
   const imgH = Math.min(100, (textW * shot.h) / shot.w);
@@ -39,9 +41,14 @@ export function downloadSpec(design, rows, steps, shot, cutMy, partShots) {
   y += imgH + 6;
 
   heading('Configuration');
-  para(`Width ${input.width} mm · depth ${input.depth} mm · height ${input.height} mm · ${design.shelves} shelves`);
-  para(`Acrylic ${input.thickness} mm ${input.finish}, colour ${input.color} · design load ${input.loadKg} kg per shelf`);
-  para(`${design.columns} post columns · sag ${design.sag.toFixed(1)} mm over ${Math.round(design.span)} mm · ${Math.round(design.clearGap)} mm clear between shelves`);
+  if (desk) {
+    para(`Width ${input.width} mm · depth ${input.depth} mm · height to top ${input.height} mm`);
+    para(`Top ${input.topThickness} mm plywood${input.topFinish === 'linoleum' ? ' with linoleum' : ''} · ${summary}`);
+  } else {
+    para(`Width ${input.width} mm · depth ${input.depth} mm · height ${input.height} mm · ${design.shelves} shelves`);
+    para(`Acrylic ${input.thickness} mm ${input.finish}, colour ${input.color} · design load ${input.loadKg} kg per shelf`);
+    para(`${design.columns} post columns · sag ${design.sag.toFixed(1)} mm over ${Math.round(design.span)} mm · ${Math.round(design.clearGap)} mm clear between shelves`);
+  }
   design.warnings.forEach((w) => para(`! ${w}`));
 
   heading('Materials at a glance');
@@ -55,20 +62,22 @@ export function downloadSpec(design, rows, steps, shot, cutMy, partShots) {
     columnStyles: { 2: { halign: 'right', fontStyle: 'bold', cellWidth: 14 } },
   });
   y = doc.lastAutoTable.finalY + 4;
-  para(`${(design.parts.rodTotalLength / 1000).toFixed(2)} m of Ø${d} rod in total`);
+  para(desk ? `${(design.parts.profileTotal / 1000).toFixed(2)} m of ${design.size}${design.size} profile in total` : `${(design.parts.rodTotalLength / 1000).toFixed(2)} m of Ø${d} rod in total`);
 
-  partsDetail(doc, design, partShots, { M, textW, getY: () => y, setY: (v) => (y = v), heading });
+  if (partShots) partsDetail(doc, design, partShots, { M, textW, getY: () => y, setY: (v) => (y = v), heading });
 
-  heading('Hole centres per sheet (x, y mm from front left)');
-  para(`Ø${design.parts.sheets.holeD} mm: ` + design.parts.sheets.holes.map(([hx, hy]) => `(${Math.round(hx)}, ${hy})`).join('  '));
+  if (!desk) {
+    heading('Hole centres per sheet (x, y mm from front left)');
+    para(`Ø${design.parts.sheets.holeD} mm: ` + design.parts.sheets.holes.map(([hx, hy]) => `(${Math.round(hx)}, ${hy})`).join('  '));
 
-  heading('Cut My order (per sheet)');
-  cutMy.split('\n').forEach((line) => para(line));
+    heading('Cut My order (per sheet)');
+    cutMy.split('\n').forEach((line) => para(line));
 
+  }
   heading('Assembly');
   steps.forEach((s, i) => para(`${i + 1}. ${s}`));
 
-  doc.save(`shelf-${input.width}x${input.depth}x${input.height}.pdf`);
+  doc.save(`${desk ? 'desk' : 'shelf'}-${input.width}x${input.depth}x${input.height}.pdf`);
 }
 
 // --- parts detail: one block per part, render on the left, dimensions on the right ------

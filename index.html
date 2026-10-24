@@ -4,6 +4,35 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Acrylic Furniture</title>
+  <meta name="description" content="Open source furniture you design and build yourself: Lego for adults. Free configurator for chrome rod and acrylic shelves and T-slot aluminium profile desks, with parts list, cut list, 3D preview and PDF build guide." />
+  <meta name="keywords" content="open source furniture, DIY furniture, modular furniture, furniture configurator, acrylic shelf, perspex shelf, chrome rod shelf, linear shaft furniture, T-slot aluminium, aluminium extrusion desk, 2020 3030 4040 profile, cut list generator, bill of materials, flat pack, maker, Lego for adults" />
+  <meta name="author" content="mfprado" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://mfprado.github.io/acrylic-furniture/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Acrylic Furniture: open source furniture configurator" />
+  <meta property="og:description" content="Open source furniture you design and build yourself: Lego for adults. Free configurator for chrome rod and acrylic shelves and T-slot aluminium profile desks, with parts list, cut list, 3D preview and PDF build guide." />
+  <meta property="og:url" content="https://mfprado.github.io/acrylic-furniture/" />
+  <meta property="og:site_name" content="Acrylic Furniture" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Acrylic Furniture: open source furniture configurator" />
+  <meta name="twitter:description" content="Open source furniture you design and build yourself: Lego for adults. Free configurator for chrome rod and acrylic shelves and T-slot aluminium profile desks, with parts list, cut list, 3D preview and PDF build guide." />
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Acrylic Furniture",
+      "url": "https://mfprado.github.io/acrylic-furniture/",
+      "description": "Open source furniture you design and build yourself: Lego for adults. Free configurator for chrome rod and acrylic shelves and T-slot aluminium profile desks, with parts list, cut list, 3D preview and PDF build guide.",
+      "applicationCategory": "DesignApplication",
+      "operatingSystem": "Any (web browser)",
+      "isAccessibleForFree": true,
+      "license": "https://github.com/mfprado/acrylic-furniture",
+      "codeRepository": "https://github.com/mfprado/acrylic-furniture",
+      "keywords": "open source furniture, DIY furniture, acrylic shelf, chrome rod, T-slot aluminium desk, cut list, Lego for adults",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "GBP" }
+    }
+  </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js" integrity="sha384-fCAW/rDWORTbQXSiB7mOg0QtQ5c+r0f544y6XoKjuVva0nMBlCpNUjiFeG5iMdS3" crossorigin="anonymous"></script>
   <script type="importmap">
@@ -50,6 +79,11 @@
     #download:hover { background: #3a3f45; }
     #cutmy { font: 11.5px/1.6 var(--mono); white-space: pre-wrap; margin: 0 0 8px; padding: 10px; background: rgba(255,255,255,0.35); border: 1px solid var(--line); border-radius: 3px; }
     .ghost { width: 100%; padding: 7px; font: 600 10.5px var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: #2c3035; background: transparent; border: 1px solid #2c3035; border-radius: 3px; cursor: pointer; }
+    .intro { margin: -6px 0 16px; color: var(--muted); }
+    .intro a { color: inherit; }
+    .tabs { display: flex; gap: 0; margin: 0 0 16px; border: 1px solid #2c3035; border-radius: 3px; overflow: hidden; }
+    .tab { flex: 1; padding: 7px; font: 600 10.5px var(--mono); letter-spacing: 0.1em; text-transform: uppercase; background: transparent; color: #2c3035; border: 0; cursor: pointer; }
+    .tab[aria-selected=true] { background: #2c3035; color: #e9ebed; }
     #viewer { height: 100vh; background: linear-gradient(#fff, #eceef0); }
     table { border-collapse: collapse; width: 100%; }
     td { padding: 6px 4px; border-bottom: 1px solid var(--line); vertical-align: top; }
@@ -64,7 +98,12 @@
   <main>
     <aside>
       <h1>Acrylic Furniture</h1>
-      <form id="config">
+      <p class="intro">An <strong>open source furniture</strong> project. Think of it as Lego for adults: standard rods, profiles, clamps and sheets you can buy anywhere, snapped together into furniture you size yourself. Set the dimensions and get the parts list, cut list, 3D preview and a PDF build guide. Free, and the <a href="https://github.com/mfprado/acrylic-furniture">code is on GitHub</a>.</p>
+      <nav class="tabs">
+        <button type="button" data-tab="shelf" class="tab">Rod shelf</button>
+        <button type="button" data-tab="desk" class="tab">Profile desk</button>
+      </nav>
+      <form id="config" data-for="shelf">
         <label>Width (mm) <input name="width" type="number" min="200" step="10" /></label>
         <label>Depth (mm) <input name="depth" type="number" min="100" step="10" /></label>
         <label>Total height (mm) <input name="height" type="number" min="150" step="10" /></label>
@@ -75,6 +114,17 @@
         <label>Acrylic colour <input name="color" type="color" /></label>
         <label>Load per shelf (kg) <input name="loadKg" type="number" min="0" /></label>
       </form>
+      <form id="deskConfig" data-for="desk">
+        <label>Width (mm) <input name="width" type="number" min="400" step="10" /></label>
+        <label>Depth (mm) <input name="depth" type="number" min="300" step="10" /></label>
+        <label>Height to top (mm) <input name="height" type="number" min="400" step="10" /></label>
+        <label>Profile <select name="profile"><option value="auto">Auto</option><option value="20">2020</option><option value="30">3030</option><option value="40">4040</option></select></label>
+        <label>Low stretchers <select name="stretchers"><option value="yes">Yes</option><option value="no">No</option></select></label>
+        <label>Top thickness (mm) <input name="topThickness" type="number" min="9" max="40" /></label>
+        <label>Top finish <select name="topFinish"><option value="linoleum">Linoleum</option><option value="plain">Plain plywood</option></select></label>
+        <label>Linoleum colour <input name="topColor" type="color" /></label>
+        <label>Frame colour <input name="frameColor" type="color" /></label>
+      </form>
       <button id="download" type="button">Download spec (PDF)</button>
       <button id="reset" type="button" class="ghost" style="margin-top:8px">Reset to defaults</button>
       <ul id="warnings"></ul>
@@ -82,11 +132,13 @@
       <h2>Materials at a glance</h2>
       <table><tbody id="parts"></tbody></table>
       <p id="rodtotal"></p>
+      <div data-for="shelf">
       <h2>Hole centres per sheet (x, y mm from front left)</h2>
       <p id="holes"></p>
       <h2>Cut My order (per sheet)</h2>
       <pre id="cutmy"></pre>
       <button id="copycutmy" type="button" class="ghost">Copy order details</button>
+      </div>
       <h2>Assembly</h2>
       <ol id="steps"></ol>
     </aside>

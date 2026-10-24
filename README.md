@@ -1,5 +1,10 @@
 # Acrylic Furniture
 
+An open source furniture project: Lego for adults. Standard off-the-shelf parts, sized to
+your space, with everything you need to buy and build them.
+
+Live: https://mfprado.github.io/acrylic-furniture/
+
 Calculator for minimalist rod and acrylic shelf units in the style of the HushLume
 3 tier keyboard stand. Enter width, depth, total height and number of shelves; get a
 parts list, hole positions for the acrylic, assembly steps with clamp heights, and a 3D
