@@ -23,8 +23,8 @@ export const PROFILES = {
 };
 
 const FOOT_HEIGHT = 15; // levelling foot, screwed most of the way in
-export const TAB_THICKNESS = 3; // mounting tabs sit between the rails and the top
-const TAB_SPACING = 300; // top mounting tabs roughly every 300 mm
+export const TAB_THICKNESS = 5; // joining plates (3/16") sit between the rails and the top
+const TAB_SPACING = 300; // joining plates on top of the rails, roughly every 300 mm
 const MID_RAIL_OVER = 1400; // add a centre top rail on wider desks
 
 // Same idea as the shelf rod rule: thin for small pieces, heavier as the frame grows.
@@ -61,20 +61,21 @@ export function computeDesk(input) {
     cuts.push({ role: 'Low stretcher, back', length: W - 2 * p, qty: 1 });
   }
 
-  // Brackets as CPlot uses them (read off their instruction pages):
-  //  - a 4-hole inside corner gusset under each end of the long rails, into the legs (4);
-  //  - a small corner gusset under each end of the short rails, into the legs;
-  //  - a stamped L bracket on top of each end of the low stretchers (6);
-  //  - two more 4-hole gussets lying flat under the back corners, tying the end
-  //    stretchers to the back stretcher (2).
-  // Every bracket hole takes one bolt and one drop-in T-nut.
-  const largeGussets = 4 + (withStretchers ? 2 : 0);
-  const smallBrackets = 4 + (midRail ? 2 : 0);
-  const lBrackets = withStretchers ? 2 * 3 : 0;
+  // Fittings from CPlot's Studio Desk bill of materials (T-Nutz 10 series parts):
+  //  - 4 Hole Inside Corner Gusset (CB-010-K): under each end of the long top rails (4)
+  //  - 2 Hole Inside Corner Gusset (CB-010-A): under each end of the short top rails (4),
+  //    plus 2 lying flat at the back corners tying end and back stretchers together
+  //  - 2 Hole Inside Corner Bracket (CBS-010-A): on the stretcher ends (8)
+  //  - Hidden Corner Connector (HC-010-A): 6, inside the slots, not visible once fitted
+  //  - Joining Plate (JP-010-A): 12 on top of the rails, each with 2 screws + 2 T-nuts
+  const largeGussets = 4;
+  const smallGussets = 4 + (midRail ? 2 : 0) + (withStretchers ? 2 : 0);
+  const lBrackets = withStretchers ? 8 : 0;
+  const hiddenConnectors = withStretchers ? 6 : 4;
   const tabsLong = Math.max(2, Math.round(W / TAB_SPACING));
   const tabsShort = Math.max(1, Math.round(D / TAB_SPACING));
   const tabs = 2 * tabsLong + 2 * tabsShort;
-  const fasteners = largeGussets * 4 + smallBrackets * 2 + lBrackets * 2 + tabs;
+  const fasteners = largeGussets * 4 + smallGussets * 2 + lBrackets * 2 + tabs * 2;
 
   const warnings = [];
   if (size < recommended)
@@ -100,8 +101,9 @@ export function computeDesk(input) {
       cuts,
       profileTotal: cuts.reduce((s, c) => s + c.length * c.qty, 0),
       largeGussets,
-      smallBrackets,
+      smallGussets,
       lBrackets,
+      hiddenConnectors,
       tabs,
       tabsLong,
       tabsShort,
@@ -117,10 +119,11 @@ export function deskRows({ parts, size, prof }) {
   const name = `${size}${size} T-slot profile`;
   return [
     ...parts.cuts.map((c) => [name, `${c.length} mm · ${c.role}`, c.qty]),
-    ['4-hole inside corner gusset', `${size} series, 2 holes per side`, parts.largeGussets],
-    ['Small corner gusset', `${size} series, 1 hole per side`, parts.smallBrackets],
-    ...(parts.lBrackets ? [['Corner bracket (L)', `${size} series, stamped, 1 hole per side`, parts.lBrackets]] : []),
-    ['Top mounting tab', `flat plate, ${TAB_THICKNESS} mm, one hole`, parts.tabs],
+    ['4 Hole Inside Corner Gusset', `${size} series (CB-010-K equivalent)`, parts.largeGussets],
+    ['2 Hole Inside Corner Gusset', `${size} series (CB-010-A equivalent)`, parts.smallGussets],
+    ...(parts.lBrackets ? [['2 Hole Inside Corner Bracket', `${size} series (CBS-010-A equivalent)`, parts.lBrackets]] : []),
+    ['Hidden Corner Connector', `${size} series (HC-010-A equivalent), set-screw`, parts.hiddenConnectors],
+    ['Joining Plate', `${size} series, 2 holes (JP-010-A equivalent)`, parts.tabs],
     ['Bolt', prof.bolt, parts.fasteners],
     ['T-nut', prof.nut, parts.fasteners],
     ['Levelling foot', `${prof.footThread} thread, into the leg end bore`, parts.feet],
@@ -135,20 +138,20 @@ export function deskSteps(d) {
   const { input, prof, p, legLength, stretcherZ, withStretchers, midRail, parts } = d;
   const loose = 'Leave the T-nuts loose so they can slide into the slots.';
   return [
-    `Short top rails (${input.depth - 2 * p} mm): bolt a small corner gusset to the underside of each end, with a T-nut on its free face. ${loose}`,
-    `Long top rails (${input.width - 2 * p} mm): bolt a 4-hole inside corner gusset to the underside of each end, with two T-nuts on its free face. ${loose}`,
+    `Short top rails (${input.depth - 2 * p} mm): bolt a 2 hole inside corner gusset to the underside of each end, with a T-nut on its free face. ${loose}`,
+    `Long top rails (${input.width - 2 * p} mm): bolt a 4 hole inside corner gusset to the underside of each end, with two T-nuts on its free face. ${loose}`,
     `Legs (${legLength} mm, tap the foot end ${prof.endTap} if needed): slide a leg onto the gusset at each end of a long rail, top flush with the rail. Tighten. You now have two U frames.`,
     `Join the two U frames with the short rails, sliding their gussets into the legs, and tighten${midRail ? `. Add the centre rail at ${Math.round(input.width / 2)} mm the same way` : ''}.`,
     ...(withStretchers
       ? [
-          `End stretchers (${input.depth - 2 * p} mm): bolt an L bracket on top of each end, T-nut on the free face. Mark ${stretcherZ} mm up from the foot end of each leg, slide them in with their undersides on the marks and tighten.`,
-          `Back stretcher (${input.width - 2 * p} mm): same L brackets, slide it in between the back legs at the same height and tighten.`,
-          'Drop two T-nuts into the underside of each end stretcher and the back stretcher at the back corners. Screw a 4-hole gusset flat across each corner.',
+          `End stretchers (${input.depth - 2 * p} mm): bolt a 2 hole inside corner bracket on top of each end, T-nut on the free face. Mark ${stretcherZ} mm up from the foot end of each leg, slide them in with their undersides on the marks and tighten.`,
+          `Back stretcher (${input.width - 2 * p} mm): a corner bracket above and below each end, slide it in between the back legs at the same height and tighten.`,
+          'Drop T-nuts into the inner faces of the end stretchers and the back stretcher at the back corners, and screw a 2 hole inside corner gusset flat across each corner.',
         ]
       : []),
     `Screw a ${prof.footThread} levelling foot into the end of each leg.`,
-    `Drop ${parts.tabs} T-nuts into the top face of the rails, about ${TAB_SPACING} mm apart, and bolt a mounting tab on each.`,
-    'Lay the top on the frame and screw up through the tabs into it.',
+    `Drop ${parts.tabs * 2} T-nuts into the top face of the rails, about ${TAB_SPACING} mm apart, and bolt a joining plate across each, two screws per plate.`,
+    'Lay the plywood (and linoleum) on the joining plates and screw up through them into the top.',
     'Level the desk with the feet, then re-tighten every bolt once.',
   ];
 }

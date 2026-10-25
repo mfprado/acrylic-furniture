@@ -269,13 +269,14 @@ function deskHardware(doc, design, shots, { M, getY, setY, heading }) {
   const name = `${size}${size}`;
   const items = [
     [shots.profile, `${name} T-slot profile`, `${(parts.profileTotal / 1000).toFixed(2)} m, cut list above`],
-    [shots.largeGusset, '4-hole inside corner gusset', `${parts.largeGussets}x  (${!design.withStretchers ? 'long rails' : '4 on the long rails, 2 flat under the back corners'})`],
-    [shots.smallGusset, 'Small corner gusset', `${parts.smallBrackets}x  short top rails`],
-    ...(parts.lBrackets ? [[shots.lBracket, 'Corner bracket (L)', `${parts.lBrackets}x  low stretchers`]] : []),
+    [shots.largeGusset, '4 Hole Inside Corner Gusset', `${parts.largeGussets}x  long top rails to legs`],
+    [shots.smallGusset, '2 Hole Inside Corner Gusset', `${parts.smallGussets}x  short top rails, back corners`],
+    ...(parts.lBrackets ? [[shots.lBracket, '2 Hole Inside Corner Bracket', `${parts.lBrackets}x  low stretchers`]] : []),
     [shots.tNut, 'Drop-in T-nut', `${parts.fasteners}x  ${prof.nut}`],
     [shots.bolt, 'Button head bolt', `${parts.fasteners}x  ${prof.bolt}`],
     [shots.foot, 'Levelling foot', `${parts.feet}x  ${prof.footThread} thread`],
-    [shots.tab, 'Mounting tab', `${parts.tabs}x  under the top`],
+    [null, 'Hidden Corner Connector', `${parts.hiddenConnectors}x  inside the slots, set-screws (not visible)`],
+    [shots.tab, 'Joining plate', `${parts.tabs}x  on the rails, under the top`],
   ];
   setY(getY() + 2);
   heading('Hardware');
@@ -289,7 +290,7 @@ function deskHardware(doc, design, shots, { M, getY, setY, heading }) {
     const x = M + col * (cell + 4);
     doc.setDrawColor(215).rect(x, y, cell, cellH - 4);
     const ih = cell * 0.62;
-    doc.addImage(shot.url, 'JPEG', x + (cell - ih * (shot.w / shot.h)) / 2, y + 1, ih * (shot.w / shot.h), ih);
+    if (shot) doc.addImage(shot.url, 'JPEG', x + (cell - ih * (shot.w / shot.h)) / 2, y + 1, ih * (shot.w / shot.h), ih);
     doc.setFont('courier', 'bold').setFontSize(8).setTextColor(20).text(title, x + 2, y + ih + 5, { maxWidth: cell - 4 });
     doc.setFont('courier', 'normal').setFontSize(7.5).setTextColor(60).text(line, x + 2, y + ih + 9.5, { maxWidth: cell - 4 });
   });

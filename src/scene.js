@@ -376,14 +376,13 @@ export function renderParts(design) {
     bolt.add(head, shank);
     const out = {
       profile: shot(bar, new THREE.Vector3(1, 0.8, 1.6)),
-      largeGusset: shot(gusset(p * 2, p * 0.8, 2, frame, p)),
-      smallGusset: shot(gusset(p, p * 0.8, 1, frame, p)),
-      lBracket: shot(lBracket(p * 0.9, p * 0.8, 2.5, frame, p)),
-      flatGusset: shot(flatGusset(p * 2.6, 4, frame, p), new THREE.Vector3(0.4, 0.6, 1.4)),
+      largeGusset: shot(gusset(p * 2, p * 0.875, 2, frame, p), new THREE.Vector3(0.6, 0.5, 1.4)),
+      smallGusset: shot(gusset(p, p * 0.875, 1, frame, p), new THREE.Vector3(0.6, 0.5, 1.4)),
+      lBracket: shot(lBracket(p, p * 0.875, 2.5, frame, p), new THREE.Vector3(0.6, 0.5, 1.4)),
       tNut: shot(nut),
       bolt: shot(bolt),
       foot: shot(levellingFoot(p)),
-      tab: shot(mountingTab(p, 3, frame), new THREE.Vector3(0.5, 1.2, 1)),
+      tab: shot(mountingTab(p, 5, frame), new THREE.Vector3(0.5, 1.2, 1)),
     };
     pmrem.dispose();
     r.dispose();
@@ -476,80 +475,78 @@ function tNut(p) {
 // across. The profiles it joins lie at local y < 0 and x < 0, so each bolt gets a
 // T-nut just inside that profile's slot.
 function gusset(L, w, holes, mat, p) {
+  // Cast inside corner gusset (T-Nutz CB-010 style): a hollow triangle, wall 3/16" on a
+  // 1" profile, open on both sides so the bolt heads show through.
   const g = new THREE.Group();
+  const t = p * 0.1875;
   const tri = new THREE.Shape().moveTo(0, 0).lineTo(L, 0).lineTo(0, L).closePath();
-  const geo = new THREE.ExtrudeGeometry(tri, { depth: w, bevelEnabled: true, bevelThickness: 0.6, bevelSize: 0.6, bevelSegments: 1 });
+  const k = t * (1 + Math.SQRT2);
+  tri.holes.push(new THREE.Path().moveTo(t, t).lineTo(t, L - k).lineTo(L - k, t).closePath());
+  const geo = new THREE.ExtrudeGeometry(tri, { depth: w, bevelEnabled: true, bevelThickness: 0.5, bevelSize: 0.5, bevelSegments: 1 });
   geo.translate(0, 0, -w / 2);
   g.add(mesh(geo, mat));
-  const r = Math.max(2.2, w * 0.14);
-  const step = L / (holes + 1);
-  for (let i = 1; i <= holes; i++) {
-    const ha = mesh(new THREE.CylinderGeometry(r, r, 1.6, 16), dark);
-    ha.position.set(step * i, 0.8, 0);
-    const hb = mesh(new THREE.CylinderGeometry(r, r, 1.6, 16), dark);
+  const r = p * 0.16;
+  const step = holes === 1 ? L / 2 : p / 2;
+  for (let i = 0; i < holes; i++) {
+    const at = holes === 1 ? step : p / 2 + i * p; // holes 1" apart on the 4-hole part
+    const ha = mesh(new THREE.CylinderGeometry(r, r, 2, 16), dark);
+    ha.position.set(at, t + 1, 0);
+    const hb = mesh(new THREE.CylinderGeometry(r, r, 2, 16), dark);
     hb.rotation.z = Math.PI / 2;
-    hb.position.set(0.8, step * i, 0);
+    hb.position.set(t + 1, at, 0);
     const na = tNut(p);
-    na.position.set(step * i, -p * 0.2, 0);
+    na.position.set(at, -p * 0.2, 0);
     const nb = tNut(p);
     nb.rotation.z = Math.PI / 2;
-    nb.position.set(-p * 0.2, step * i, 0);
+    nb.position.set(-p * 0.2, at, 0);
     g.add(ha, hb, na, nb);
   }
   return g;
 }
 
-// Flat 4-hole gusset plate: right triangle in the local x/y plane, thickness t.
-function flatGusset(L, t, mat, p) {
-  const g = new THREE.Group();
-  // Origin at the corner where the two profile centre lines cross; arms run along them.
-  const h = p / 2;
-  const tri = new THREE.Shape().moveTo(-h, -h).lineTo(L, -h).lineTo(L, h).lineTo(h, h).lineTo(h, L).lineTo(-h, L).closePath();
-  const geo = new THREE.ExtrudeGeometry(tri, { depth: t, bevelEnabled: false });
-  g.add(mesh(geo, mat));
-  for (const [x, y] of [[L * 0.45, 0], [L * 0.8, 0], [0, L * 0.45], [0, L * 0.8]]) {
-    const head = mesh(new THREE.CylinderGeometry(p * 0.14, p * 0.14, 1.6, 16), dark);
-    head.rotation.x = Math.PI / 2;
-    head.position.set(x, y, -0.8);
-    const nut = tNut(p);
-    nut.position.set(x, y, t + p * 0.2);
-    g.add(head, nut);
-  }
-  return g;
-}
-
-// Stamped L bracket: two plates of thickness t, legs L along +a and +b, width w, with a
-// stiffening rib. The profiles it joins lie at local y < 0 and x < 0.
+// 2 Hole Inside Corner Bracket (T-Nutz CBS-010-A style): 1" x 1" legs, 7/8" wide, 3/16"
+// walls with a triangular web in the middle. Profiles lie at local y < 0 and x < 0.
 function lBracket(L, w, t, mat, p) {
   const g = new THREE.Group();
-  const a = mesh(new THREE.BoxGeometry(L, t, w), mat);
-  a.position.set(L / 2, t / 2, 0);
-  const b = mesh(new THREE.BoxGeometry(t, L, w), mat);
-  b.position.set(t / 2, L / 2, 0);
-  const rib = mesh(new THREE.ExtrudeGeometry(new THREE.Shape().moveTo(0, 0).lineTo(L * 0.45, 0).lineTo(0, L * 0.45).closePath(), { depth: t, bevelEnabled: false }), mat);
-  rib.position.set(t, t, -t / 2);
-  g.add(a, b, rib);
-  for (const [x, y, rz] of [[L * 0.65, t, 0], [t, L * 0.65, Math.PI / 2]]) {
-    const head = mesh(new THREE.CylinderGeometry(w * 0.18, w * 0.18, 1.6, 16), dark);
-    head.rotation.z = rz;
-    head.position.set(x + (rz ? 0.8 : 0), y + (rz ? 0 : 0.8), 0);
+  const wall = p * 0.1875;
+  const a = mesh(new THREE.BoxGeometry(L, wall, w), mat);
+  a.position.set(L / 2, wall / 2, 0);
+  const b = mesh(new THREE.BoxGeometry(wall, L, w), mat);
+  b.position.set(wall / 2, L / 2, 0);
+  const web = mesh(new THREE.ExtrudeGeometry(new THREE.Shape().moveTo(0, 0).lineTo(L * 0.85, 0).lineTo(0, L * 0.85).closePath(), { depth: wall, bevelEnabled: false }), mat);
+  web.position.set(0, 0, -wall / 2);
+  g.add(a, b, web);
+  for (const [x, y, rz] of [[L * 0.62, wall, 0], [wall, L * 0.62, Math.PI / 2]]) {
+    for (const side of [-1, 1]) {
+      const head = mesh(new THREE.CylinderGeometry(p * 0.13, p * 0.13, 1.6, 16), dark);
+      head.rotation.z = rz;
+      head.position.set(x + (rz ? 0.8 : 0), y + (rz ? 0 : 0.8), (side * w) / 4);
+      g.add(head);
+    }
     const nut = tNut(p);
     nut.rotation.z = rz;
     nut.position.set(rz ? -p * 0.2 : x, rz ? y : -p * 0.2, 0);
-    g.add(head, nut);
+    g.add(nut);
   }
   return g;
 }
 
+// Joining Plate (T-Nutz JP-010-A style): 2" x 7/8" x 3/16" with two holes 1" apart, each
+// with a button head screw into a T-nut in the rail below.
 function mountingTab(p, t, mat) {
   const g = new THREE.Group();
-  g.add(mesh(new THREE.BoxGeometry(p * 1.6, t, p * 0.8), mat));
-  const nut = tNut(p);
-  nut.position.y = -t / 2 - p * 0.2;
-  g.add(nut);
-  const head = mesh(new THREE.CylinderGeometry(p * 0.14, p * 0.14, 1.4, 16), dark);
-  head.position.y = t / 2 + 0.7;
-  g.add(head);
+  const plate = new THREE.Shape().moveTo(-p, -p * 0.4375).lineTo(p, -p * 0.4375).lineTo(p, p * 0.4375).lineTo(-p, p * 0.4375).closePath();
+  for (const x of [-p / 2, p / 2]) plate.holes.push(circlePath(x, 0, p * 0.14));
+  const m = mesh(extrudeUp(plate, t, 0.3), mat);
+  m.position.y = -t / 2;
+  g.add(m);
+  for (const x of [-p / 2, p / 2]) {
+    const head = mesh(new THREE.SphereGeometry(p * 0.2, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), dark);
+    head.position.set(x, t / 2, 0);
+    const nut = tNut(p);
+    nut.position.set(x, -t / 2 - p * 0.2, 0);
+    g.add(head, nut);
+  }
   return g;
 }
 
@@ -608,7 +605,7 @@ function buildDesk(design) {
   const shortRail = (x) => {
     barY(D - 2 * p, x, p, railZ, `Short rail ${name} × ${D - 2 * p} mm`);
     for (const [y, sy] of [[p, 1], [D - p, -1]])
-      add(orient(gusset(p, w, 1, frame, p), [0, sy, 0], [0, 0, -1], at(x, y, railZ)), `Small corner gusset ${name}`, 2);
+      add(orient(gusset(p, p * 0.875, 1, frame, p), [0, sy, 0], [0, 0, -1], at(x, y, railZ)), `2 Hole Inside Corner Gusset ${name}`, 2);
   };
   shortRail(p / 2);
   shortRail(W - p / 2);
@@ -618,7 +615,7 @@ function buildDesk(design) {
   tag = 'longRails';
   for (const y of [p / 2, D - p / 2]) barX(W - 2 * p, p, y, railZ, `Long rail ${name} × ${W - 2 * p} mm`);
   for (const [x, y, sx] of legs)
-    add(orient(gusset(p * 2, w, 2, frame, p), [sx, 0, 0], [0, 0, -1], at(x + (sx * p) / 2, y, railZ)), `4-hole inside corner gusset ${name}`, 4);
+    add(orient(gusset(p * 2, p * 0.875, 2, frame, p), [sx, 0, 0], [0, 0, -1], at(x + (sx * p) / 2, y, railZ)), `4 Hole Inside Corner Gusset ${name}`, 4);
 
   // 3. legs, full height to the top of the frame
   tag = 'legs';
@@ -630,20 +627,21 @@ function buildDesk(design) {
     for (const x of [p / 2, W - p / 2]) {
       barY(D - 2 * p, x, p, stretcherZ, `End stretcher ${name} × ${D - 2 * p} mm`);
       for (const [y, sy] of [[p, 1], [D - p, -1]])
-        add(orient(lBracket(p * 0.9, w, 2.5, frame, p), [0, sy, 0], [0, 0, 1], at(x, y, stretcherZ + p)), `Corner bracket (L) ${name}`, 2);
+        add(orient(lBracket(p, p * 0.875, 2.5, frame, p), [0, sy, 0], [0, 0, 1], at(x, y, stretcherZ + p)), `2 Hole Inside Corner Bracket ${name}`, 2);
     }
     // 5. back stretcher between the back legs
     tag = 'backStretcher';
     barX(W - 2 * p, p, D - p / 2, stretcherZ, `Back stretcher ${name} × ${W - 2 * p} mm`);
-    for (const [x, sx] of [[p, 1], [W - p, -1]])
-      add(orient(lBracket(p * 0.9, w, 2.5, frame, p), [sx, 0, 0], [0, 0, 1], at(x, D - p / 2, stretcherZ + p)), `Corner bracket (L) ${name}`, 2);
-    // 6. flat 4-hole gussets under the back corners, end stretcher to back stretcher
-    tag = 'backGussets';
-    // basis chosen so the plate's thickness always grows upward, into the stretchers
-    for (const [x, , sx] of legs.filter(([, , , sy]) => sy < 0)) {
-      const [a, b] = sx > 0 ? [[1, 0, 0], [0, -1, 0]] : [[0, -1, 0], [-1, 0, 0]];
-      add(orient(flatGusset(p * 2.6, 4, frame, p), a, b, at(x, D - p / 2, stretcherZ - 4)), `4-hole inside corner gusset ${name}`, 4);
+    for (const [x, sx] of [[p, 1], [W - p, -1]]) {
+      add(orient(lBracket(p, p * 0.875, 2.5, frame, p), [sx, 0, 0], [0, 0, 1], at(x, D - p / 2, stretcherZ + p)), `2 Hole Inside Corner Bracket ${name}`, 2);
+      // second bracket under the same joint, as CPlot's 8 brackets imply
+      add(orient(lBracket(p, p * 0.875, 2.5, frame, p), [sx, 0, 0], [0, 0, -1], at(x, D - p / 2, stretcherZ)), `2 Hole Inside Corner Bracket ${name}`, 2);
     }
+    // 6. a 2 hole gusset lying flat in each back corner, against the inner faces of the
+    //    end stretcher and the back stretcher
+    tag = 'backGussets';
+    for (const [x, sx] of [[p, 1], [W - p, -1]])
+      add(orient(gusset(p, p * 0.875, 1, frame, p), [sx, 0, 0], [0, -1, 0], at(x, D - p, stretcherZ + p / 2)), `2 Hole Inside Corner Gusset ${name}`, 2);
   }
 
   // 7. feet
@@ -655,10 +653,10 @@ function buildDesk(design) {
   const tabZ = railZ + p;
   const along = (n, len, off) => Array.from({ length: n }, (_, i) => off + ((i + 1) * len) / (n + 1));
   for (const y of [p / 2, D - p / 2])
-    for (const x of along(parts.tabsLong, W - 2 * p, p)) add(mountingTab(p, TAB_T, frame), 'Mounting tab', 1).position.copy(at(x, y, tabZ + TAB_T / 2));
+    for (const x of along(parts.tabsLong, W - 2 * p, p)) add(mountingTab(p, TAB_T, frame), 'Joining plate', 2).position.copy(at(x, y, tabZ + TAB_T / 2));
   for (const x of [p / 2, W - p / 2])
     for (const y of along(parts.tabsShort, D - 2 * p, p)) {
-      const t = add(mountingTab(p, TAB_T, frame), 'Mounting tab', 1);
+      const t = add(mountingTab(p, TAB_T, frame), 'Joining plate', 2);
       t.position.copy(at(x, y, tabZ + TAB_T / 2));
       t.rotation.y = Math.PI / 2;
     }
@@ -677,7 +675,7 @@ function buildDesk(design) {
   return g;
 }
 
-const TAB_T = 3; // matches TAB_THICKNESS in desk.js
+const TAB_T = 5; // matches TAB_THICKNESS in desk.js
 
 // Which model tags are new in each written desk step (parallel to deskSteps).
 export function deskStepTags(design) {
