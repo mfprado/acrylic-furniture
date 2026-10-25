@@ -413,36 +413,90 @@ function profileBar(p, len, mat) {
   return mesh(geo, mat);
 }
 
-function bracketL(p, mat) {
+// Place an object built in local axes (a = local x, b = local y, n = local z) at a design
+// point. Design vectors are [x along width, y front to back, z up]; three.js is y up.
+const dv = ([x, y, z]) => new THREE.Vector3(x, z, y);
+function orient(obj, a, b, at) {
+  const A = dv(a).normalize();
+  const B = dv(b).normalize();
+  const N = new THREE.Vector3().crossVectors(A, B);
+  obj.matrixAutoUpdate = false;
+  obj.matrix.makeBasis(A, B, N).setPosition(at);
+  return obj;
+}
+
+// Cast corner gusset: solid right-triangle prism with bolt holes on both faces.
+// Right angle at the local origin, legs along +a and +b, width w across.
+function gusset(L, w, holes, mat) {
   const g = new THREE.Group();
-  const t = Math.max(2.5, p * 0.12);
-  const a = mesh(new THREE.BoxGeometry(p * 0.9, t, p * 0.9), mat);
-  a.position.set(0, t / 2, p * 0.45);
-  const b = mesh(new THREE.BoxGeometry(p * 0.9, p * 0.9, t), mat);
-  b.position.set(0, p * 0.45, t / 2);
+  const tri = new THREE.Shape().moveTo(0, 0).lineTo(L, 0).lineTo(0, L).closePath();
+  const geo = new THREE.ExtrudeGeometry(tri, { depth: w, bevelEnabled: true, bevelThickness: 0.6, bevelSize: 0.6, bevelSegments: 1 });
+  geo.translate(0, 0, -w / 2);
+  g.add(mesh(geo, mat));
+  const r = Math.max(2.2, w * 0.14);
+  const step = L / (holes + 1);
+  for (let i = 1; i <= holes; i++) {
+    // bolt heads on the two faces that touch the profiles
+    const ha = mesh(new THREE.CylinderGeometry(r, r, 1.6, 16), dark);
+    ha.position.set(step * i, 0.8, 0);
+    const hb = mesh(new THREE.CylinderGeometry(r, r, 1.6, 16), dark);
+    hb.rotation.z = Math.PI / 2;
+    hb.position.set(0.8, step * i, 0);
+    g.add(ha, hb);
+  }
+  return g;
+}
+
+// Flat L bracket: two plates of thickness t, legs L along +a and +b, width w.
+function lBracket(L, w, t, mat) {
+  const g = new THREE.Group();
+  const a = mesh(new THREE.BoxGeometry(L, t, w), mat);
+  a.position.set(L / 2, t / 2, 0);
+  const b = mesh(new THREE.BoxGeometry(t, L, w), mat);
+  b.position.set(t / 2, L / 2, 0);
   g.add(a, b);
+  for (const [x, y, rz] of [[L * 0.6, t, 0], [t, L * 0.6, Math.PI / 2]]) {
+    const head = mesh(new THREE.CylinderGeometry(w * 0.18, w * 0.18, 1.6, 16), dark);
+    head.rotation.z = rz;
+    head.position.set(x + (rz ? 0.8 : 0), y + (rz ? 0 : 0.8), 0);
+    g.add(head);
+  }
+  return g;
+}
+
+function mountingTab(p, t, mat) {
+  const g = new THREE.Group();
+  g.add(mesh(new THREE.BoxGeometry(p * 1.6, t, p * 0.8), mat));
+  const head = mesh(new THREE.CylinderGeometry(p * 0.14, p * 0.14, 1.4, 16), dark);
+  head.position.y = t / 2 + 0.7;
+  g.add(head);
   return g;
 }
 
 function levellingFoot(p) {
   const g = new THREE.Group();
-  const pad = mesh(new THREE.CylinderGeometry(p * 0.7, p * 0.75, 6, 32), dark);
-  pad.position.y = 3;
-  const stem = mesh(new THREE.CylinderGeometry(p * 0.14, p * 0.14, 12, 16), chrome);
-  stem.position.y = 12;
-  g.add(pad, stem);
+  const pad = mesh(new THREE.CylinderGeometry(p * 0.75, p * 0.8, 5, 32), dark);
+  pad.position.y = 2.5;
+  const base = mesh(new THREE.CylinderGeometry(p * 0.55, p * 0.7, 4, 32), chrome);
+  base.position.y = 7;
+  const nut = mesh(new THREE.CylinderGeometry(p * 0.3, p * 0.3, 3, 6), chrome);
+  nut.position.y = 10.5;
+  const stem = mesh(new THREE.CylinderGeometry(p * 0.13, p * 0.13, 8, 16), chrome);
+  stem.position.y = 13;
+  g.add(pad, base, nut, stem);
   return g;
 }
 
 function buildDesk(design) {
   const g = new THREE.Group();
-  const { input, p, size, railZ, legLength, stretcherZ, withStretchers, midRail, footHeight: fh } = design;
+  const { input, p, size, railZ, legLength, stretcherZ, withStretchers, midRail, footHeight: fh, parts } = design;
   const { width: W, depth: D, topThickness: tt } = input;
   const frame = new THREE.MeshPhysicalMaterial({ color: input.frameColor ?? '#c4c8cc', metalness: 0.8, roughness: 0.42 });
   const X = (x) => x - W / 2;
   const Z = (y) => y - D / 2;
+  const at = (x, y, z) => new THREE.Vector3(X(x), z, Z(y));
   const name = `${size}${size}`;
-  let tag = 'legs';
+  let tag = '';
   const add = (o, part) => { o.userData = { tag, part }; g.add(o); return o; };
 
   // along x: rotate so local z points to +x
@@ -463,69 +517,102 @@ function buildDesk(design) {
     b.position.set(X(x), z0, Z(y));
   };
 
-  const cornersXY = [[p / 2, p / 2], [W - p / 2, p / 2], [p / 2, D - p / 2], [W - p / 2, D - p / 2]];
-  tag = 'legs';
-  for (const [x, y] of cornersXY) barZ(legLength, x, y, fh, `Leg ${name} × ${legLength} mm`);
+  const legs = [[p / 2, p / 2, 1, 1], [W - p / 2, p / 2, -1, 1], [p / 2, D - p / 2, 1, -1], [W - p / 2, D - p / 2, -1, -1]];
+  const GL = p * 2; // large gusset leg
+  const GS = p; // small bracket leg
+  const w = p * 0.8;
 
-  tag = 'shortRails';
-  barY(D - 2 * p, p / 2, p, railZ, `Short rail ${name} × ${D - 2 * p} mm`);
-  barY(D - 2 * p, W - p / 2, p, railZ, `Short rail ${name} × ${D - 2 * p} mm`);
+  // 1. long rails with a large gusset at each end (in the long side's vertical plane)
   tag = 'longRails';
   barX(W, 0, p / 2, railZ, `Long rail ${name} × ${W} mm`);
   barX(W, 0, D - p / 2, railZ, `Long rail ${name} × ${W} mm`);
-  if (midRail) {
-    tag = 'midRail';
-    barY(D - 2 * p, W / 2, p, railZ, `Short rail ${name} × ${D - 2 * p} mm`);
-  }
+  for (const [x, y, sx] of legs)
+    add(orient(gusset(GL, w, 2, frame), [sx, 0, 0], [0, 0, -1], at(x + sx * p / 2, y, railZ)), `Large gusset ${name}`);
 
-  // brackets where the short rails meet the long rails (inside corners, under the rails)
-  tag = 'brackets';
-  for (const [x, y] of cornersXY) {
-    const br = add(bracketL(p, frame), `Corner bracket ${name}`);
-    const inX = x < W / 2 ? 1 : -1;
-    const inY = y < D / 2 ? 1 : -1;
-    br.position.set(X(x + inX * p * 0.5), railZ - p * 0.9, Z(y + inY * p * 0.5));
-    br.rotation.y = Math.atan2(inX, inY);
-    br.rotation.x = Math.PI;
-  }
+  // 2. legs into the gussets
+  tag = 'legs';
+  for (const [x, y] of legs) barZ(legLength, x, y, fh, `Leg ${name} × ${legLength} mm`);
+
+  // 3. short rails joining the two U frames, small triangle brackets in the top plane
+  tag = 'shortRails';
+  const shortRail = (x, label) => {
+    barY(D - 2 * p, x, p, railZ, label);
+    for (const [y, sy] of [[p, 1], [D - p, -1]])
+      for (const sx of [1, -1]) {
+        if ((x <= p && sx < 0) || (x >= W - p && sx > 0)) continue;
+        add(orient(gusset(GS, w * 0.8, 1, frame), [sx, 0, 0], [0, sy, 0], at(x + sx * p / 2, y, railZ + p / 2)), `Small triangle bracket ${name}`);
+      }
+  };
+  shortRail(p / 2, `Short rail ${name} × ${D - 2 * p} mm`);
+  shortRail(W - p / 2, `Short rail ${name} × ${D - 2 * p} mm`);
+  if (midRail) shortRail(W / 2, `Short rail ${name} × ${D - 2 * p} mm`);
 
   if (withStretchers) {
-    tag = 'stretchers';
-    barY(D - 2 * p, p / 2, p, stretcherZ, `Stretcher ${name} × ${D - 2 * p} mm`);
-    barY(D - 2 * p, W - p / 2, p, stretcherZ, `Stretcher ${name} × ${D - 2 * p} mm`);
-    barX(W - 2 * p, p, D - p / 2, stretcherZ, `Stretcher ${name} × ${W - 2 * p} mm`);
+    // 4. end stretchers with L brackets sitting on top of them against the leg faces
+    tag = 'endStretchers';
+    for (const x of [p / 2, W - p / 2]) {
+      barY(D - 2 * p, x, p, stretcherZ, `End stretcher ${name} × ${D - 2 * p} mm`);
+      for (const [y, sy] of [[p, 1], [D - p, -1]])
+        add(orient(lBracket(p * 0.9, w, 2.5, frame), [0, sy, 0], [0, 0, 1], at(x, y, stretcherZ + p)), `L bracket ${name}`);
+    }
+    // 5. back stretcher between the back legs
+    tag = 'backStretcher';
+    barX(W - 2 * p, p, D - p / 2, stretcherZ, `Back stretcher ${name} × ${W - 2 * p} mm`);
+    for (const [x, sx] of [[p, 1], [W - p, -1]])
+      add(orient(lBracket(p * 0.9, w, 2.5, frame), [sx, 0, 0], [0, 0, 1], at(x, D - p / 2, stretcherZ + p)), `L bracket ${name}`);
   }
 
+  // 6. extra large gussets under the back corners, in the end side's plane
+  tag = 'backGussets';
+  for (const [x, y, , sy] of legs.filter(([, , , sy]) => sy < 0))
+    add(orient(gusset(GL, w, 2, frame), [0, sy, 0], [0, 0, -1], at(x, y + sy * p / 2, railZ)), `Large gusset ${name}`);
+
+  // 7. feet
   tag = 'feet';
-  for (const [x, y] of cornersXY) {
+  for (const [x, y] of legs) {
     const foot = add(levellingFoot(p), `Levelling foot ${design.prof.footThread}`);
-    foot.position.set(X(x), 0, Z(y));
+    foot.position.copy(at(x, y, 0));
   }
 
+  // 8. mounting tabs on the top face of the rails
+  tag = 'tabs';
+  const tabZ = railZ + p + TAB_T / 2;
+  const along = (n, len, off) => Array.from({ length: n }, (_, i) => off + ((i + 1) * len) / (n + 1));
+  for (const y of [p / 2, D - p / 2])
+    for (const x of along(parts.tabsLong, W, 0)) add(mountingTab(p, TAB_T, frame), 'Mounting tab').position.copy(at(x, y, tabZ - TAB_T / 2));
+  for (const x of [p / 2, W - p / 2])
+    for (const y of along(parts.tabsShort, D - 2 * p, p)) {
+      const t = add(mountingTab(p, TAB_T, frame), 'Mounting tab');
+      t.position.copy(at(x, y, tabZ - TAB_T / 2));
+      t.rotation.y = Math.PI / 2;
+    }
+
+  // 9. top
   tag = 'top';
+  const topZ = railZ + p + TAB_T;
   const wood = new THREE.MeshStandardMaterial({ color: 0xd8c3a0, roughness: 0.8 });
   const lino = input.topFinish === 'linoleum';
   const ply = add(mesh(new THREE.BoxGeometry(W, lino ? tt - 2 : tt, D), wood), `Plywood top ${W} × ${D} mm`);
-  ply.position.set(0, railZ + p + (lino ? (tt - 2) / 2 : tt / 2), 0);
+  ply.position.set(0, topZ + (lino ? (tt - 2) / 2 : tt / 2), 0);
   if (lino) {
     const sheetL = add(mesh(new THREE.BoxGeometry(W, 2, D), new THREE.MeshStandardMaterial({ color: input.topColor ?? '#c9b8a3', roughness: 0.9 })), 'Linoleum');
-    sheetL.position.set(0, railZ + p + tt - 1, 0);
+    sheetL.position.set(0, topZ + tt - 1, 0);
   }
   return g;
 }
 
+const TAB_T = 3; // matches TAB_THICKNESS in desk.js
+
 // Which model tags are new in each written desk step (parallel to deskSteps).
 export function deskStepTags(design) {
   return [
+    ['longRails'],
     ['legs'],
     ['shortRails'],
-    ['longRails'],
-    ...(design.midRail ? [['midRail']] : []),
-    ['brackets'],
-    ...(design.withStretchers ? [['stretchers']] : []),
-    [], // gussets (not modelled)
+    ...(design.withStretchers ? [['endStretchers'], ['backStretcher']] : []),
+    ['backGussets'],
     ['feet'],
-    [], // mounting tabs (not modelled)
+    ['tabs'],
     ['top'],
     [],
   ];

@@ -28,7 +28,7 @@ export function downloadSpec(design, rows, steps, shot, cutMy, partShots, summar
   };
 
   doc.setFont('courier', 'bold').setFontSize(16).setTextColor(30);
-  doc.text(desk ? 'PROFILE DESK' : 'ACRYLIC FURNITURE', M, y);
+  doc.text(desk ? 'PROFILE DESK' : 'ROD SHELF', M, y);
   y += 6;
   doc.setFont('courier', 'normal').setFontSize(9).setTextColor(90);
   const sub = desk ? `${design.size}${design.size} profile` : `${design.shelves} shelves · Ø${d} rods`;
