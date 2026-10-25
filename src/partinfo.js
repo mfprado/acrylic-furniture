@@ -49,7 +49,7 @@ const PARTS = [
   {
     match: /^Joining plate/,
     title: () => '2 Hole Joining Plate',
-    text: '1" × 2" × 3/16" plate, Ø0.281" holes 1" between centres. Bolted under a top rail; the free hole takes a wood screw up into the top.',
+    text: '1" × 2" × 3/16" plate, Ø0.281" holes 1" between centres. Bolted under a top rail; the free hole takes a button head bolt up into the top.',
     code: 'JP-010-A',
     shot: 'tab',
     search: () => '10 Series 2 Hole Joining Plate',

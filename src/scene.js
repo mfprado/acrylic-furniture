@@ -433,7 +433,7 @@ export function renderParts(design) {
       tNut: shot(nut),
       bolt: shot(bolt),
       foot: shot(levellingFoot(p)),
-      tab: shot(mountingTab(p, 5, frame), new THREE.Vector3(0.5, 1.2, 1)),
+      tab: shot(mountingTab(p, 5, frame, p * 0.35), new THREE.Vector3(0.6, 0.9, 1.2)),
       hiddenConnector: shot(hiddenConnector(p, frame), new THREE.Vector3(0.8, 0.7, 1.2)),
     };
     pmrem.dispose();
@@ -677,7 +677,7 @@ function lBracket(L, w, t, mat, p) {
 // Joining Plate (T-Nutz JP-010-A): 1" x 2" x 3/16", two Ø0.281" holes 1" apart. It is
 // bolted to the underside of a top rail (CPlot p.26-28: 12 plates, 12 bolts, 12 T-nuts):
 // the outer hole (local -x) takes a bolt up into a T-nut in the rail's bottom slot, the
-// inner hole (local +x) sticks out under the inset top and takes a wood screw up into it.
+// inner hole (local +x) sticks out under the inset top and takes a button head bolt up into it.
 function mountingTab(p, t, mat, gap = 0) {
   const g = new THREE.Group();
   const plate = new THREE.Shape().moveTo(-p, -p / 2).lineTo(p, -p / 2).lineTo(p, p / 2).lineTo(-p, p / 2).closePath(); // 1" x 2"
@@ -695,10 +695,12 @@ function mountingTab(p, t, mat, gap = 0) {
   nut.rotation.x = Math.PI; // rail is above the plate: stem points down
   nut.position.set(-p / 2, t / 2 + p * 0.2, 0);
   g.add(nut);
-  // wood screw shank bridging the gap that lifts the top flush with the rails
+  // button head bolt up through the free hole, across the gap that lifts the top flush
+  // with the rails, and into the top
   if (gap > 0) {
-    const shank = mesh(new THREE.CylinderGeometry(p * 0.07, p * 0.07, gap, 12), chrome);
-    shank.position.set(p / 2, t / 2 + gap / 2, 0);
+    const shank = boltShank(p, gap + t + p * 0.4);
+    shank.rotation.x = Math.PI; // points up from the head under the plate
+    shank.position.set(p / 2, -t / 2, 0);
     g.add(shank);
   }
   return g;
@@ -883,7 +885,7 @@ function buildDesk(design) {
   const along = (n, len, off) => Array.from({ length: n }, (_, i) => off + ((i + 1) * len) / (n + 1));
   // rotation.y turns the plate's local +x (inner hole) to point into the frame
   const tab = (x, y, rot, ix, iy) => {
-    const t = add(mountingTab(p, TAB_T, frame, design.topGap), 'Joining plate', 1);
+    const t = add(mountingTab(p, TAB_T, frame, design.topGap), 'Joining plate', [2, 1]);
     t.position.copy(at(x + (ix * p) / 2, y + (iy * p) / 2, tabZ));
     t.rotation.y = rot;
   };
