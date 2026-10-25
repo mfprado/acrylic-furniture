@@ -423,16 +423,13 @@ export function renderParts(design) {
     const nut = tNut(p);
     nut.scale.setScalar(3);
     const bolt = new THREE.Group();
-    const head = mesh(new THREE.SphereGeometry(p * 0.22, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), dark);
-    const shank = mesh(new THREE.CylinderGeometry(p * 0.1, p * 0.1, p * 0.45, 16), chrome);
-    shank.position.y = -p * 0.22;
-    bolt.add(head, shank);
+    bolt.add(boltHead(p), boltShank(p, p * 0.6));
     const out = {
       profile: shot(bar, new THREE.Vector3(1, 0.8, 1.6)),
       largeGusset: shot(gusset(p * 2, p * 0.875, 2, frame, p), new THREE.Vector3(0.6, 0.5, 1.4)),
       smallGusset: shot(gusset(p, p * 0.875, 1, frame, p), new THREE.Vector3(0.6, 0.5, 1.4)),
       lBracket: shot(lBracket(p, p * 0.875, 2.5, frame, p), new THREE.Vector3(0.6, 0.5, 1.4)),
-      joiningPlate3: shot(joiningPlate3(p, 5, frame), new THREE.Vector3(0.5, -1.2, 1)),
+      joiningPlate3: shot(joiningPlate3(p, 5, frame, { bolts: [0], gap: p * 0.35 }), new THREE.Vector3(0.6, 0.9, 1.2)),
       tNut: shot(nut),
       bolt: shot(bolt),
       foot: shot(levellingFoot(p)),
@@ -521,6 +518,37 @@ function orient(obj, a, b, at) {
 }
 
 // Drop-in T-nut as it sits in a slot: small block, pressed against the slot lips.
+// Flanged button head of a hex socket bolt (supplier drawing: head Ø11.4 mm and 2.6 mm
+// tall on an M6). Sits on the surface at y = 0 and points along +y; flip it to hang below.
+function boltHead(p) {
+  const g = new THREE.Group();
+  const r = p * 0.19;
+  const flange = mesh(new THREE.CylinderGeometry(r, r, p * 0.03, 24), chrome);
+  flange.position.y = p * 0.015;
+  const dome = mesh(new THREE.CylinderGeometry(r * 0.45, r * 0.78, p * 0.06, 24), chrome);
+  dome.position.y = p * 0.06;
+  const socket = mesh(new THREE.CylinderGeometry(r * 0.3, r * 0.3, p * 0.01, 6), dark);
+  socket.position.y = p * 0.09;
+  g.add(flange, dome, socket);
+  return g;
+}
+
+// Threaded shank of a bolt, length len, from y = 0 down to y = -len.
+function boltShank(p, len) {
+  const g = new THREE.Group();
+  const core = mesh(new THREE.CylinderGeometry(p * 0.065, p * 0.065, len, 16), chrome);
+  core.position.y = -len / 2;
+  g.add(core);
+  const pitch = p * 0.035;
+  for (let y = -pitch; y > -len + pitch / 2; y -= pitch) {
+    const ridge = mesh(new THREE.TorusGeometry(p * 0.068, p * 0.014, 6, 20), chrome);
+    ridge.rotation.x = Math.PI / 2 + 0.06; // slight tilt reads as a helix
+    ridge.position.y = y;
+    g.add(ridge);
+  }
+  return g;
+}
+
 // Drop-in T-nut as in the supplier drawing: a narrow stem that sits in the slot opening,
 // a wider body under the slot lips with chamfered back edges, and a tapped hole through.
 // Stem points along local +y (towards the fitting), length along local z.
@@ -635,8 +663,8 @@ function lBracket(L, w, t, mat, p) {
   g.add(mesh(geo, mat));
   const at = L * 0.56; // hole centre along each leg
   for (const rz of [0, Math.PI / 2]) {
-    const head = mesh(new THREE.SphereGeometry(p * 0.19, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), dark);
-    head.rotation.z = -rz; // dome points away from the profile
+    const head = boltHead(p);
+    head.rotation.z = -rz; // head points away from the profile
     head.position.set(rz ? th : at, rz ? at : th, 0);
     const nut = tNut(p);
     nut.rotation.z = -rz; // stem towards the bracket
@@ -658,8 +686,8 @@ function mountingTab(p, t, mat, gap = 0) {
   m.position.y = -t / 2;
   g.add(m);
   for (const x of [-p / 2, p / 2]) {
-    const head = mesh(new THREE.SphereGeometry(p * 0.2, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), dark);
-    head.rotation.x = Math.PI; // dome hangs below the plate
+    const head = boltHead(p);
+    head.rotation.x = Math.PI; // head hangs below the plate
     head.position.set(x, -t / 2, 0);
     g.add(head);
   }
@@ -713,7 +741,7 @@ function joiningPlate3(p, t, mat, { bolts = [-p, 0, p], gap = 0 } = {}) {
   m.position.y = -t / 2;
   g.add(m);
   for (const x of [-p, 0, p]) {
-    const head = mesh(new THREE.SphereGeometry(p * 0.2, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), dark);
+    const head = boltHead(p);
     head.rotation.x = Math.PI; // under the plate
     head.position.set(x, -t / 2, 0);
     g.add(head);
@@ -723,9 +751,10 @@ function joiningPlate3(p, t, mat, { bolts = [-p, 0, p], gap = 0 } = {}) {
       nut.position.set(x, t / 2 + p * 0.2, 0);
       g.add(nut);
     } else if (gap > 0) {
-      // wood screw bridging the gap up to the top panel
-      const shank = mesh(new THREE.CylinderGeometry(p * 0.07, p * 0.07, gap, 12), chrome);
-      shank.position.set(x, t / 2 + gap / 2, 0);
+      // button head bolt up through the hole, across the gap and into the top panel
+      const shank = boltShank(p, gap + t + p * 0.4);
+      shank.rotation.x = Math.PI; // points up from the head under the plate
+      shank.position.set(x, -t / 2, 0);
       g.add(shank);
     }
   }
@@ -765,7 +794,9 @@ function buildDesk(design) {
   let tag = '';
   // hw: fasteners that come with this object, so the step parts box can count them
   const add = (o, part, hw = 0) => {
-    o.userData = { tag, part, hw: hw ? [[prof.bolt, hw], [prof.nut, hw]] : [] };
+    // hw: a count (that many bolts and T-nuts) or [bolts, nuts]
+    const [nb, nn] = Array.isArray(hw) ? hw : [hw, hw];
+    o.userData = { tag, part, hw: [...(nb ? [[prof.bolt, nb]] : []), ...(nn ? [[prof.nut, nn]] : [])] };
     g.add(o);
     return o;
   };
@@ -864,7 +895,7 @@ function buildDesk(design) {
   // middle hole bolted into the rail, outer holes screwed up into each panel
   if (midRail)
     for (const y of along(parts.centreSupports, D - 2 * p, p)) {
-      const pl = add(joiningPlate3(p, TAB_T, frame, { bolts: [0], gap: design.topGap }), `3 Hole Joining Plate ${name}`, 1);
+      const pl = add(joiningPlate3(p, TAB_T, frame, { bolts: [0], gap: design.topGap }), `3 Hole Joining Plate ${name}`, [3, 1]);
       pl.position.copy(at(W / 2, y, tabZ));
     }
 

@@ -59,7 +59,7 @@ const PARTS = [
     title: () => '3 Hole Joining Plate',
     shot: 'joiningPlate3',
     search: () => '10 Series 3 Hole Joining Plate',
-    text: '3" × 7/8" × 3/16" straight plate, three holes 1" apart. Across the centre rail to carry both top panels: middle hole bolted into the rail, outer holes screwed up into the panels.',
+    text: '3" × 7/8" × 3/16" straight plate, three holes 1" apart. Across the centre rail to carry both top panels: middle hole bolted into a drop-in T-nut in the rail, two button head bolts up into the panels through the outer holes.',
   },
   {
     match: /^Levelling foot/,

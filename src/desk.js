@@ -104,7 +104,10 @@ export function computeDesk(input) {
   const tabsLong = Math.max(2, Math.round(W / TAB_SPACING));
   const tabsShort = Math.max(1, Math.round(D / TAB_SPACING));
   const tabs = 2 * tabsLong + 2 * tabsShort;
+  // bolts with a T-nut each; the 3 hole plates across the centre rail also take two button
+  // head bolts up into the top panels through their outer holes (no T-nut)
   const fasteners = largeGussets * 4 + smallGussets * 2 + lBrackets * 2 + tabs + centreSupports;
+  const bolts = fasteners + 2 * centreSupports;
 
   const warnings = [];
   if (size < recommended)
@@ -168,6 +171,7 @@ export function computeDesk(input) {
       tabsLong,
       tabsShort,
       fasteners,
+      bolts,
       feet: 4,
       top: { width: topW, depth: topD, thickness: tt, finish: q.topFinish, panels: midRail ? 2 : 1 },
     },
@@ -185,9 +189,9 @@ export function deskRows({ parts, size, prof }) {
     ...(parts.hiddenConnectors ? [['Hidden Corner Connector', `${size} series (HC-010-A equivalent), set-screw`, parts.hiddenConnectors]] : []),
     ['Joining Plate', `${size} series, 2 holes (JP-010-A equivalent)`, parts.tabs],
     ...(parts.threeHolePlates ? [['3 Hole Joining Plate', `${size} series, straight, across the centre rail under the top`, parts.threeHolePlates]] : []),
-    ['Bolt', prof.bolt, parts.fasteners],
+    ['Bolt', `${prof.bolt}, flanged`, parts.bolts],
     ['T-nut', prof.nut, parts.fasteners],
-    ['Wood screw', 'for the top, through the joining plates; length = gap + plate + about 12 mm into the plywood', parts.tabs + 2 * parts.centreSupports],
+    ['Wood screw', 'for the top, through the joining plates; length = gap + plate + about 12 mm into the plywood', parts.tabs],
     ['Levelling foot', `${prof.footThread} thread, into the leg end bore`, parts.feet],
     ['Plywood top', `${parts.top.width} × ${parts.top.depth} × ${parts.top.thickness} mm`, parts.top.panels],
     ...(parts.top.finish === 'linoleum' ? [['Linoleum sheet', `${parts.top.width} × ${parts.top.depth} mm, glued to the top`, parts.top.panels]] : []),
@@ -212,7 +216,7 @@ export function deskSteps(d) {
         ]
       : []),
     `Screw a ${prof.footThread} levelling foot into the end of each leg.`,
-    `Drop ${parts.tabs} T-nuts into the bottom slot of the top rails, about ${TAB_SPACING} mm apart. Bolt a joining plate under the rail at each, so its second hole sticks out under the opening for the top.${midRail ? ` Across the centre rail, bolt ${parts.centreSupports} 3 hole joining plates by their middle hole so the outer holes reach under both panels.` : ''}`,
+    `Drop ${parts.tabs} T-nuts into the bottom slot of the top rails, about ${TAB_SPACING} mm apart. Bolt a joining plate under the rail at each, so its second hole sticks out under the opening for the top.${midRail ? ` Across the centre rail, bolt ${parts.centreSupports} 3 hole joining plates by their middle hole (one T-nut each) so the outer holes reach under both panels; they take two button head bolts each into the top.` : ''}`,
     `Drop the plywood (${parts.top.panels > 1 ? '2 panels, ' : ''}${parts.top.width} × ${parts.top.depth} mm, linoleum side up) in between the top rails. Drive a wood screw up through each plate's free hole into the top, leaving a ${Math.max(0, d.topGap)} mm gap above the plate so the top sits flush with the rails.`,
     'Level the desk with the feet, then re-tighten every bolt once.',
   ];
