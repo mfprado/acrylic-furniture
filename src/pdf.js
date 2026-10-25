@@ -46,7 +46,8 @@ export function downloadSpec(design, rows, steps, shot, cutMy, partShots, summar
     para(`Top ${input.topThickness} mm plywood${input.topFinish === 'linoleum' ? ' with linoleum' : ''} · ${summary}`);
   } else {
     para(`Width ${input.width} mm · depth ${input.depth} mm · height ${input.height} mm · ${design.shelves} shelves`);
-    para(`Acrylic ${input.thickness} mm ${input.finish}, colour ${input.color} · design load ${input.loadKg} kg per shelf`);
+    const sh = design.parts.sheets;
+    para(`${sh.materialName} ${input.thickness} mm${sh.material === 'acrylic' ? ` ${input.finish}` : ''}${['acrylic', 'mfc'].includes(sh.material) ? `, colour ${input.color}` : ''} · design load ${input.loadKg} kg per shelf`);
     para(`${design.columns} post columns · sag ${design.sag.toFixed(1)} mm over ${Math.round(design.span)} mm · ${Math.round(design.clearGap)} mm clear between shelves`);
   }
   design.warnings.forEach((w) => para(`! ${w}`));
@@ -109,13 +110,13 @@ function partsDetail(doc, design, shots, { M, textW, getY, setY, heading }) {
   setY(getY() + 2);
   heading('Parts detail');
 
-  const drawY = block('Acrylic sheet', shots.sheet, [
+  const drawY = block(`${sh.materialName} sheet`, shots.sheet, [
     `${sh.width} x ${sh.depth} x ${sh.thickness} mm, qty ${sh.qty}`,
     `${sh.holes.length} through holes, Ø${sh.holeD} mm`,
     `Hole centres ${inset} mm from front, back and side edges`,
     `Hole spacing along width: ${Math.round(design.span)} mm`,
     `Hole spacing front to back: ${sh.depth - 2 * inset} mm`,
-    'Polished edges recommended',
+    sh.material === 'acrylic' ? 'Polished edges recommended' : 'Seal or edge-band the cut edges',
   ], 52);
   setY(sheetDrawing(doc, M, drawY + 4, textW, sh, inset) + 6);
 

@@ -1,4 +1,4 @@
-import { computeDesign, assemblySteps, cutMyOrder, DEFAULTS } from './calc.js';
+import { computeDesign, assemblySteps, cutMyOrder, DEFAULTS, SHEET_MATERIALS } from './calc.js';
 import { computeDesk, deskRows, deskSteps, DESK_DEFAULTS } from './desk.js';
 import { createViewer, renderParts, renderSteps, shelfStepTags, deskStepTags } from './scene.js';
 import { downloadSpec } from './pdf.js';
@@ -11,7 +11,7 @@ const TABS = {
   shelf: {
     form: $('config'),
     defaults: DEFAULTS,
-    strings: ['finish', 'color', 'rod'],
+    strings: ['finish', 'color', 'rod', 'material'],
     compute: computeDesign,
     rows: (d) => partRows(d),
     steps: assemblySteps,
@@ -44,7 +44,30 @@ const write = (key, value) => {
 const fill = (form, values) => {
   for (const [k, v] of Object.entries(values)) if (form.elements[k]) form.elements[k].value = v;
 };
-for (const [name, t] of Object.entries(TABS)) fill(t.form, { ...t.defaults, ...(read(storeKey(name)) ?? {}) });
+// The shelf thickness list depends on the sheet material, so rebuild it when that changes.
+// Acrylic-only options (finish) hide for wood; the colour picker only matters for acrylic
+// and MFC, which come in colours.
+function syncMaterial() {
+  const f = TABS.shelf.form;
+  const m = SHEET_MATERIALS[f.elements.material.value] ?? SHEET_MATERIALS.acrylic;
+  const sel = f.elements.thickness;
+  const keep = Number(sel.value);
+  sel.innerHTML = m.thicknesses.map((t) => `<option value="${t}">${t} mm</option>`).join('');
+  sel.value = m.thicknesses.includes(keep) ? keep : m.thicknesses.reduce((a, b) => (Math.abs(b - keep) < Math.abs(a - keep) ? b : a));
+  f.querySelector('[data-acrylic]').hidden = f.elements.material.value !== 'acrylic';
+  f.querySelector('[data-colour]').hidden = m.color !== null;
+}
+
+for (const [name, t] of Object.entries(TABS)) {
+  const saved = { ...t.defaults, ...(read(storeKey(name)) ?? {}) };
+  fill(t.form, saved);
+  if (name === 'shelf') {
+    syncMaterial();
+    fill(t.form, { thickness: saved.thickness });
+    syncMaterial();
+  }
+}
+TABS.shelf.form.elements.material.addEventListener('change', syncMaterial);
 
 let tab = TABS[read(TAB_KEY)] ? read(TAB_KEY) : 'shelf';
 const framed = {};
@@ -95,7 +118,7 @@ function render() {
 export function partRows({ parts, d }) {
   return [
     ...parts.rods.filter((r) => r.qty).map((r) => [`Ø${d} mm chrome rod`, `${r.length} mm · ${r.role}`, r.qty]),
-    ['Cast acrylic sheet', `${parts.sheets.width} × ${parts.sheets.depth} × ${parts.sheets.thickness} mm, ${parts.sheets.holes.length} holes Ø${parts.sheets.holeD}`, parts.sheets.qty],
+    [`${parts.sheets.materialName} sheet`, `${parts.sheets.width} × ${parts.sheets.depth} × ${parts.sheets.thickness} mm, ${parts.sheets.holes.length} holes Ø${parts.sheets.holeD}`, parts.sheets.qty],
     ['Cross clamp (90°)', `Ø${d} bore both ways`, parts.clamps],
     ['Flange coupling', `Ø${d} bore`, parts.flanges],
     ['Shaft collar', `Ø${d} bore`, parts.collars],

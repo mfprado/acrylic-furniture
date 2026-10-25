@@ -208,7 +208,19 @@ function rod(d, len) {
 }
 
 // Fluted sheet: flutes run along the width. Profile drawn across the depth, extruded along x.
-function sheet(W, D, t, finish) {
+// Opaque board materials for wood-based shelves; acrylic keeps its glassy material.
+const boardCache = new Map();
+function sheetMaterial(input) {
+  const key = input.material ?? 'acrylic';
+  if (key === 'acrylic') return acrylic;
+  const color = { plywood: '#d6b98c', mdf: '#b9946a', osb: '#c9a568' }[key] ?? input.color ?? '#e8e4dc';
+  const id = `${key}:${color}`;
+  if (!boardCache.has(id))
+    boardCache.set(id, new THREE.MeshStandardMaterial({ color, roughness: key === 'mfc' ? 0.45 : 0.85, metalness: 0 }));
+  return boardCache.get(id);
+}
+
+function sheet(W, D, t, finish, mat = acrylic) {
   const s = new THREE.Shape();
   s.moveTo(0, 0).lineTo(D, 0).lineTo(D, t);
   if (finish === 'fluted') {
@@ -223,7 +235,7 @@ function sheet(W, D, t, finish) {
   const geo = new THREE.ExtrudeGeometry(s, { depth: W, bevelEnabled: false, curveSegments: 6 });
   geo.rotateY(-Math.PI / 2);
   geo.translate(W / 2, 0, -D / 2);
-  const m = mesh(geo, acrylic);
+  const m = mesh(geo, mat);
   m.castShadow = false;
   return m;
 }
@@ -248,6 +260,7 @@ function buildModel(design) {
   const g = new THREE.Group();
   const { input, d, clampSpec, flange, xs, ys, postLength } = design;
   const { width: W, depth: D, thickness: t, finish = 'fluted' } = input;
+  const mat = sheetMaterial(input);
   const cx = (x) => x - W / 2;
   const cz = (y) => y - D / 2;
   const reach = clampSpec.len - clampSpec.section;
@@ -272,7 +285,7 @@ function buildModel(design) {
   shelfRows(design).forEach(({ i, under, over, top }, j) => {
     if (i === 0) {
       tag = 'bottom';
-      add(sheet(W, D, t, finish), 'Acrylic sheet', 0, top - t, 0);
+      add(sheet(W, D, t, mat === acrylic ? finish : 'flat', mat), `${design.parts.sheets.materialName} sheet`, 0, top - t, 0);
       return;
     }
     tag = `r${j}a`;
@@ -289,7 +302,7 @@ function buildModel(design) {
       });
     });
     tag = `r${j}b`;
-    if (i > 0) add(sheet(W, D, t, finish), 'Acrylic sheet', 0, top - t, 0);
+    if (i > 0) add(sheet(W, D, t, mat === acrylic ? finish : 'flat', mat), `${design.parts.sheets.materialName} sheet`, 0, top - t, 0);
     xs.forEach((x) => {
       ys.forEach((y, row) => {
         const inZ = row === 0 ? -1 : 1;
@@ -386,7 +399,7 @@ export function renderParts(design) {
   const outline = new THREE.Shape();
   outline.moveTo(0, 0).lineTo(s.width, 0).lineTo(s.width, s.depth).lineTo(0, s.depth).closePath();
   s.holes.forEach(([x, y]) => outline.holes.push(circlePath(x, y, s.holeD / 2)));
-  const sheetMesh = mesh(extrudeUp(outline, s.thickness, 0.3), acrylic);
+  const sheetMesh = mesh(extrudeUp(outline, s.thickness, 0.3), sheetMaterial(input));
   sheetMesh.position.set(-s.width / 2, 0, s.depth / 2);
 
   const rodPiece = rod(d, d * 30);

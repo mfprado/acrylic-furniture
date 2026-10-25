@@ -4,26 +4,26 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Open Source Modular Furniture</title>
-  <meta name="description" content="Open source furniture you design and build yourself: Lego for adults. Free configurator for chrome rod and acrylic shelves and T-slot aluminium profile desks, with parts list, cut list, 3D preview and PDF build guide." />
-  <meta name="keywords" content="open source furniture, open source modular furniture, modular furniture system, DIY furniture, modular furniture, furniture configurator, acrylic shelf, perspex shelf, chrome rod shelf, linear shaft furniture, T-slot aluminium, aluminium extrusion desk, 2020 3030 4040 profile, cut list generator, bill of materials, flat pack, maker, Lego for adults" />
+  <meta name="description" content="Open source furniture you design and build yourself: Lego for adults. Free configurator for chrome rod shelves in acrylic, plywood, MDF, OSB or MFC, and T-slot aluminium profile desks, with parts list, cut list, 3D preview and PDF build guide." />
+  <meta name="keywords" content="open source furniture, open source modular furniture, modular furniture system, DIY furniture, modular furniture, furniture configurator, acrylic shelf, perspex shelf, plywood shelf, MDF shelf, chrome rod shelf, linear shaft furniture, T-slot aluminium, aluminium extrusion desk, 2020 3030 4040 profile, cut list generator, bill of materials, flat pack, maker, Lego for adults" />
   <meta name="author" content="mfprado" />
   <meta name="robots" content="index, follow" />
   <link rel="canonical" href="https://mfprado.github.io/open-source-modular-furniture/" />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Open Source Modular Furniture: free DIY furniture configurator" />
-  <meta property="og:description" content="Open source furniture you design and build yourself: Lego for adults. Free configurator for chrome rod and acrylic shelves and T-slot aluminium profile desks, with parts list, cut list, 3D preview and PDF build guide." />
+  <meta property="og:description" content="Open source furniture you design and build yourself: Lego for adults. Free configurator for chrome rod shelves in acrylic, plywood, MDF, OSB or MFC, and T-slot aluminium profile desks, with parts list, cut list, 3D preview and PDF build guide." />
   <meta property="og:url" content="https://mfprado.github.io/open-source-modular-furniture/" />
   <meta property="og:site_name" content="Open Source Modular Furniture" />
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content="Open Source Modular Furniture: free DIY furniture configurator" />
-  <meta name="twitter:description" content="Open source furniture you design and build yourself: Lego for adults. Free configurator for chrome rod and acrylic shelves and T-slot aluminium profile desks, with parts list, cut list, 3D preview and PDF build guide." />
+  <meta name="twitter:description" content="Open source furniture you design and build yourself: Lego for adults. Free configurator for chrome rod shelves in acrylic, plywood, MDF, OSB or MFC, and T-slot aluminium profile desks, with parts list, cut list, 3D preview and PDF build guide." />
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "WebApplication",
       "name": "Open Source Modular Furniture",
       "url": "https://mfprado.github.io/open-source-modular-furniture/",
-      "description": "Open source furniture you design and build yourself: Lego for adults. Free configurator for chrome rod and acrylic shelves and T-slot aluminium profile desks, with parts list, cut list, 3D preview and PDF build guide.",
+      "description": "Open source furniture you design and build yourself: Lego for adults. Free configurator for chrome rod shelves in acrylic, plywood, MDF, OSB or MFC, and T-slot aluminium profile desks, with parts list, cut list, 3D preview and PDF build guide.",
       "applicationCategory": "DesignApplication",
       "operatingSystem": "Any (web browser)",
       "isAccessibleForFree": true,
@@ -55,6 +55,7 @@
       --chrome: repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 1px, rgba(0,0,0,0.025) 1px 2px, transparent 2px 4px), linear-gradient(100deg, #d9dcdf 0%, #cdd1d4 40%, #d6d9dc 70%, #cbcfd2 100%);
     }
     * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
     body { margin: 0; font: 14px/1.5 system-ui, sans-serif; color: var(--ink); background: var(--bg); }
     main { display: grid; grid-template-columns: 400px 1fr; height: 100vh; }
     aside {
@@ -113,9 +114,10 @@
         <label>Total height (mm) <input name="height" type="number" min="150" step="10" /></label>
         <label>Shelves <input name="shelves" type="number" min="2" max="8" /></label>
         <label>Rod diameter <select name="rod"><option value="auto">Auto</option><option value="6">Ø6 mm</option><option value="8">Ø8 mm</option><option value="10">Ø10 mm</option></select></label>
-        <label>Acrylic thickness (mm) <input name="thickness" type="number" min="3" max="20" /></label>
-        <label>Acrylic finish <select name="finish"><option value="fluted">Fluted</option><option value="flat">Flat</option></select></label>
-        <label>Acrylic colour <input name="color" type="color" /></label>
+        <label>Shelf material <select name="material"><option value="acrylic">Acrylic</option><option value="plywood">Plywood</option><option value="mdf">MDF</option><option value="osb">OSB</option><option value="mfc">MFC</option></select></label>
+        <label>Thickness <select name="thickness"></select></label>
+        <label data-acrylic>Acrylic finish <select name="finish"><option value="fluted">Fluted</option><option value="flat">Flat</option></select></label>
+        <label data-colour>Colour <input name="color" type="color" /></label>
         <label>Load per shelf (kg) <input name="loadKg" type="number" min="0" /></label>
       </form>
       <form id="deskConfig" data-for="desk">

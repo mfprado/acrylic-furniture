@@ -1,4 +1,5 @@
-// Pure geometry and bill of materials for a rod + cross clamp + acrylic shelf unit.
+// Pure geometry and bill of materials for a rod + cross clamp + sheet shelf unit
+// (acrylic or wood-based board).
 // Construction (from the HushLume keyboard stand assembly video):
 //   - Posts stand in flange couplings (feet). The bottom sheet sits on the flanges,
 //     posts pass through holes in it, a shaft collar on top locks it down.
@@ -15,7 +16,8 @@ export const DEFAULTS = {
   thickness: 8,
   loadKg: 10, // spread load per shelf, used for the sag check
   finish: 'fluted', // 'fluted' or 'flat', only changes the 3D view
-  color: '#202d6a', // acrylic tint, only changes the 3D view
+  material: 'acrylic', // key of SHEET_MATERIALS
+  color: '#202d6a', // acrylic tint or MFC colour, only changes the 3D view
   rod: 'auto', // 'auto' or a stock diameter (6, 8, 10) chosen for looks
 };
 
@@ -29,8 +31,16 @@ export const FLANGES = {
   12: { height: 13, hubD: 16, plateD: 31.9, plate: 3.2 },
 };
 
-const E_ACRYLIC = 3200; // N/mm², cast acrylic
-const DENSITY_ACRYLIC = 1.19e-6; // kg/mm³
+// Shelf sheet materials. E (bending stiffness, N/mm²) and density (kg/mm³) are typical
+// handbook values; board stiffness varies by brand and grade, so the sag check is a guide.
+// Wood board thicknesses are the ones the user's supplier stocks (B&Q style range).
+export const SHEET_MATERIALS = {
+  acrylic: { name: 'Cast acrylic', E: 3200, density: 1.19e-6, thicknesses: [3, 4, 5, 6, 8, 10, 12, 15, 20], color: null },
+  plywood: { name: 'Plywood', E: 7000, density: 6.0e-7, thicknesses: [3, 4, 6, 9, 11], color: '#d6b98c' },
+  mdf: { name: 'MDF', E: 3500, density: 7.5e-7, thicknesses: [3, 4, 6, 9, 11], color: '#b9946a' },
+  osb: { name: 'OSB', E: 4900, density: 6.3e-7, thicknesses: [3, 4, 6, 9, 11], color: '#c9a568' },
+  mfc: { name: 'MFC (melamine chipboard)', E: 3000, density: 6.8e-7, thicknesses: [3, 4, 6, 9, 11], color: null },
+};
 const G = 9.81;
 const SAG_LIMIT_RATIO = 250; // allowed sag = span / 250
 // Longest post stretch between horizontal rods, as a multiple of rod diameter. Rule of
@@ -68,17 +78,19 @@ export function clampSize(d) {
 }
 
 // Mid span sag of a sheet supported on two crossbars, under its own weight plus load.
-export function sheetSag({ span, depth, thickness, loadKg }) {
+export function sheetSag({ span, depth, thickness, loadKg, material = 'acrylic' }) {
+  const { E, density } = SHEET_MATERIALS[material];
   const I = (depth * thickness ** 3) / 12;
-  const qSelf = DENSITY_ACRYLIC * depth * thickness * G; // N/mm
+  const qSelf = density * depth * thickness * G; // N/mm
   const qLoad = (loadKg * G) / span; // N/mm
-  return (5 * (qSelf + qLoad) * span ** 4) / (384 * E_ACRYLIC * I);
+  return (5 * (qSelf + qLoad) * span ** 4) / (384 * E * I);
 }
 
 export function computeDesign(input) {
   const p = { ...DEFAULTS, ...input };
   const { width: W, depth: D, height: H, thickness: t } = p;
   const shelves = Math.max(2, Math.round(p.shelves));
+  const mat = SHEET_MATERIALS[p.material] ? p.material : 'acrylic';
 
   const recommended = rodDiameter(H, W);
   const d = p.rod === 'auto' || p.rod == null ? recommended : Number(p.rod);
@@ -100,14 +112,14 @@ export function computeDesign(input) {
   let span, sag;
   for (;;) {
     span = (W - 2 * inset) / (columns - 1);
-    sag = sheetSag({ span, depth: D, thickness: t, loadKg: p.loadKg / (columns - 1) });
+    sag = sheetSag({ span, depth: D, thickness: t, loadKg: p.loadKg / (columns - 1), material: mat });
     if (sag <= span / SAG_LIMIT_RATIO || columns >= 5) break;
     columns++;
   }
   const xs = Array.from({ length: columns }, (_, i) => inset + i * span);
   const ys = [inset, D - inset];
 
-  // Vertical layout. "top" means top face of the acrylic sheet.
+  // Vertical layout. "top" means top face of the sheet.
   const bottomTop = fh + t;
   const topTop = H - clamp.hi;
   const levels = Array.from({ length: shelves }, (_, i) =>
@@ -145,18 +157,20 @@ export function computeDesign(input) {
     flanges: posts,
     collars: posts,
     clamps: rows * posts * 2,
-    sheets: { qty: shelves, width: W, depth: D, thickness: t, holeD, holes: xs.flatMap((x) => ys.map((y) => [x, y])) },
+    sheets: { qty: shelves, width: W, depth: D, thickness: t, material: mat, materialName: SHEET_MATERIALS[mat].name, holeD, holes: xs.flatMap((x) => ys.map((y) => [x, y])) },
   };
 
   const warnings = [];
   if (sag > span / SAG_LIMIT_RATIO)
-    warnings.push(`Shelf sags ${sag.toFixed(1)} mm even with ${columns} columns. Use thicker acrylic.`);
+    warnings.push(`Shelf sags ${sag.toFixed(1)} mm even with ${columns} columns. Use a thicker sheet.`);
   if (clearGap < 60) warnings.push(`Only ${Math.round(clearGap)} mm clear between shelves.`);
   if (d < recommended)
     warnings.push(`Ø${d} is thinner than the Ø${recommended} suggested for this size; expect more brace rows and a less rigid frame.`);
   if (braces.length)
     warnings.push(`Added ${braces.length} brace row(s) so no post runs more than ${maxUnbraced} mm unbraced.`);
-  if (columns > 2) warnings.push(`Added ${columns - 2} middle column(s) so ${t} mm acrylic stays flat over ${W} mm.`);
+  if (columns > 2) warnings.push(`Added ${columns - 2} middle column(s) so ${t} mm ${SHEET_MATERIALS[mat].name.toLowerCase()} stays flat over ${W} mm.`);
+  if (!SHEET_MATERIALS[mat].thicknesses.includes(t))
+    warnings.push(`${SHEET_MATERIALS[mat].name} is not stocked in ${t} mm (${SHEET_MATERIALS[mat].thicknesses.join(', ')}).`);
 
   return { input: p, shelves, d, recommended, clamp, clampSpec: CLAMPS[d], flange, inset, columns, xs, ys, span, sag, levels, braces, clearGap, postLength, parts, warnings };
 }
@@ -176,9 +190,13 @@ export function cutMyOrder(design) {
   const { parts, inset, input } = design;
   const s = parts.sheets;
   const notes = [];
-  if (!CUTMY.thicknesses.clear.includes(s.thickness))
-    notes.push(`${s.thickness} mm is not a Cut My clear acrylic thickness (${CUTMY.thicknesses.clear.join(', ')}).`);
-  if (!CUTMY.thicknesses.opal.includes(s.thickness)) notes.push(`Opal only comes in ${CUTMY.thicknesses.opal.join(', ')} mm.`);
+  if (s.material === 'acrylic') {
+    if (!CUTMY.thicknesses.clear.includes(s.thickness))
+      notes.push(`${s.thickness} mm is not a Cut My clear acrylic thickness (${CUTMY.thicknesses.clear.join(', ')}).`);
+    if (!CUTMY.thicknesses.opal.includes(s.thickness)) notes.push(`Opal only comes in ${CUTMY.thicknesses.opal.join(', ')} mm.`);
+  } else {
+    notes.push(`${s.materialName}: pick it under Cut My's wood sheets and check the thickness is offered there.`);
+  }
   if (s.width > CUTMY.maxLength || s.depth > CUTMY.maxWidth) notes.push('Sheet is larger than Cut My can cut.');
   if (s.thickness < 8 && input.width >= 900) notes.push(`${s.thickness} mm is thin for a ${input.width} mm shelf; 8 or 10 mm recommended.`);
   return {
