@@ -156,7 +156,7 @@ function buildPdf() {
   if (tab === 'shelf') {
     downloadSpec(current, t.rows(current), t.steps(current), viewer.snapshot(), cutMyText(cutMyOrder(current)), renderParts(current), null, renderSteps(current, shelfStepTags(current)));
   } else {
-    downloadSpec(current, t.rows(current), t.steps(current), viewer.snapshot(), null, null, t.summary(current), renderSteps(current, deskStepTags(current)));
+    downloadSpec(current, t.rows(current), t.steps(current), viewer.snapshot(), null, renderParts(current), t.summary(current), renderSteps(current, deskStepTags(current)));
   }
 }
 showTab(tab);

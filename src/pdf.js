@@ -64,7 +64,8 @@ export function downloadSpec(design, rows, steps, shot, cutMy, partShots, summar
   y = doc.lastAutoTable.finalY + 4;
   para(desk ? `${(design.parts.profileTotal / 1000).toFixed(2)} m of ${design.size}${design.size} profile in total` : `${(design.parts.rodTotalLength / 1000).toFixed(2)} m of Ø${d} rod in total`);
 
-  if (partShots) partsDetail(doc, design, partShots, { M, textW, getY: () => y, setY: (v) => (y = v), heading });
+  const ctx = { M, textW, getY: () => y, setY: (v) => (y = v), heading };
+  if (partShots) (desk ? deskHardware : partsDetail)(doc, design, partShots, ctx);
 
   if (!desk) {
     heading('Hole centres per sheet (x, y mm from front left)');
@@ -257,4 +258,39 @@ function deliver(doc, name) {
 function openBlob(blob) {
   const url = URL.createObjectURL(blob);
   if (!window.open(url, '_blank')) location.href = url;
+}
+
+// --- desk hardware: what each fitting looks like and how many, like the front page of a
+// flat-pack manual --------------------------------------------------------------------
+
+function deskHardware(doc, design, shots, { M, getY, setY, heading }) {
+  const { parts, prof, size } = design;
+  const name = `${size}${size}`;
+  const items = [
+    [shots.profile, `${name} T-slot profile`, `${(parts.profileTotal / 1000).toFixed(2)} m, cut list above`],
+    [shots.largeGusset, '4-hole inside corner gusset', `${parts.largeGussets}x  (${!design.withStretchers ? 'long rails' : '4 on the long rails, 2 flat under the back corners'})`],
+    [shots.smallGusset, 'Small corner gusset', `${parts.smallBrackets}x  short top rails`],
+    ...(parts.lBrackets ? [[shots.lBracket, 'Corner bracket (L)', `${parts.lBrackets}x  low stretchers`]] : []),
+    [shots.tNut, 'Drop-in T-nut', `${parts.fasteners}x  ${prof.nut}`],
+    [shots.bolt, 'Button head bolt', `${parts.fasteners}x  ${prof.bolt}`],
+    [shots.foot, 'Levelling foot', `${parts.feet}x  ${prof.footThread} thread`],
+    [shots.tab, 'Mounting tab', `${parts.tabs}x  under the top`],
+  ];
+  setY(getY() + 2);
+  heading('Hardware');
+  const cell = 58;
+  const cellH = 52;
+  let y = getY();
+  items.forEach(([shot, title, line], i) => {
+    const col = i % 3;
+    if (col === 0 && i > 0) y += cellH;
+    if (y + cellH > 285) { doc.addPage(); y = 15; }
+    const x = M + col * (cell + 4);
+    doc.setDrawColor(215).rect(x, y, cell, cellH - 4);
+    const ih = cell * 0.62;
+    doc.addImage(shot.url, 'JPEG', x + (cell - ih * (shot.w / shot.h)) / 2, y + 1, ih * (shot.w / shot.h), ih);
+    doc.setFont('courier', 'bold').setFontSize(8).setTextColor(20).text(title, x + 2, y + ih + 5, { maxWidth: cell - 4 });
+    doc.setFont('courier', 'normal').setFontSize(7.5).setTextColor(60).text(line, x + 2, y + ih + 9.5, { maxWidth: cell - 4 });
+  });
+  setY(y + cellH + 2);
 }
