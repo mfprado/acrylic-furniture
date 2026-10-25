@@ -86,9 +86,9 @@ export function computeDesk(input) {
   //  - 2 Hole Inside Corner Gusset (CB-010-A): under each end of the short top rails (4)
   //  - 2 Hole Inside Corner Bracket (CBS-010-A): 8 in the BOM; CPlot's photos show them
   //    under the stretcher ends (6 joints). The other 2 are listed but not placed.
-  //  - Hidden Corner Connector (HC-010-A, inside to inside): 6, in the ends of the end and
-  //    back stretchers, gripping the leg slots (CPlot p.12-19). Only the access hole shows.
-  //    Four more join the optional centre rail: one each side of it at both ends.
+  //  - Hidden Corner Connector (HC-010-A, inside to inside): only on the optional centre
+  //    rail, one each side of it at both ends. The stretcher corners use the brackets and
+  //    the flat 4 hole gussets only (the BOM lists 6 connectors; their place is unclear).
   //  - 3 Hole Joining Plate: across the optional centre rail, carrying both top panels.
   //  - Joining Plate (JP-010-A): 12 across the top of the rails, one bolt + T-nut into the
   //    rail and one wood screw up into the top through the overhanging hole (CPlot p.26-28)
@@ -96,7 +96,7 @@ export function computeDesk(input) {
   const largeGussets = 4 + backGussets;
   const smallGussets = 4;
   const lBrackets = withStretchers ? 8 : 0;
-  const hiddenConnectors = (withStretchers ? 6 : 0) + (midRail ? 4 : 0); // centre rail: one each side, both ends
+  const hiddenConnectors = midRail ? 4 : 0; // centre rail only: one each side, both ends
   // centre rail: a hidden corner connector in each end joins it to the long rails, and
   // 3 hole plates across it carry both top panels (middle hole bolted, outer holes screwed up)
   const centreSupports = midRail ? Math.max(1, Math.round(D / TAB_SPACING)) : 0;
@@ -182,7 +182,7 @@ export function deskRows({ parts, size, prof }) {
     ['4 Hole Inside Corner Gusset', `${size} series (CB-010-K equivalent)`, parts.largeGussets],
     ['2 Hole Inside Corner Gusset', `${size} series (CB-010-A equivalent)`, parts.smallGussets],
     ...(parts.lBrackets ? [['2 Hole Inside Corner Bracket', `${size} series (CBS-010-A equivalent)`, parts.lBrackets]] : []),
-    ['Hidden Corner Connector', `${size} series (HC-010-A equivalent), set-screw`, parts.hiddenConnectors],
+    ...(parts.hiddenConnectors ? [['Hidden Corner Connector', `${size} series (HC-010-A equivalent), set-screw`, parts.hiddenConnectors]] : []),
     ['Joining Plate', `${size} series, 2 holes (JP-010-A equivalent)`, parts.tabs],
     ...(parts.threeHolePlates ? [['3 Hole Joining Plate', `${size} series, straight, across the centre rail under the top`, parts.threeHolePlates]] : []),
     ['Bolt', prof.bolt, parts.fasteners],
@@ -206,8 +206,8 @@ export function deskSteps(d) {
     `Join the two U frames with the short rails, sliding their gussets into the legs, and tighten${midRail ? `. Add the centre rail at ${Math.round(input.width / 2)} mm between the long rails, level with them, with two hidden corner connectors at each end, one each side, in the inside corners` : ''}.`,
     ...(withStretchers
       ? [
-          `End stretchers (${input.depth - 2 * p} mm): fit a hidden corner connector into each end and bolt a 2 hole inside corner bracket under each end, T-nut on the free face. Mark ${stretcherZ} mm up from the foot end of each leg, slide them in with their undersides on the marks and tighten the connector set screws and the brackets.`,
-          `Back stretcher (${input.width - 2 * p} mm): a hidden corner connector in each end and a corner bracket under it, slide it in between the back legs at the same height and tighten.`,
+          `End stretchers (${input.depth - 2 * p} mm): bolt a 2 hole inside corner bracket under each end, T-nut on the free face. Mark ${stretcherZ} mm up from the foot end of each leg, slide them in with their undersides on the marks and tighten the brackets.`,
+          `Back stretcher (${input.width - 2 * p} mm): a corner bracket under each end, slide it in between the back legs at the same height and tighten.`,
           'Back corners: drop two T-nuts into the inner side slot of the end stretcher and two into the back stretcher, next to each back leg. Set a 4 hole inside corner gusset flat into the inside corner and bolt it to both stretchers, four screws per corner.',
         ]
       : []),

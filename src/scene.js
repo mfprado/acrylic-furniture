@@ -100,9 +100,9 @@ export function createViewer(container, { onPick } = {}) {
     const o = partAt(e);
     if (!o || !onPick) return;
     // how many of the same part are in the model
-    let count = 0;
-    model.traverse((c) => { if (c.userData.part === o.userData.part) count++; });
-    onPick(o.userData.part, count);
+    const names = [];
+    model.traverse((c) => { if (c.userData.part) names.push(c.userData.part); });
+    onPick(o.userData.part, names);
   });
 
   return {
@@ -801,16 +801,13 @@ function buildDesk(design) {
   for (const [x, y] of legs) barZ(legLength, x, y, fh, `Leg ${name} × ${legLength} mm`);
 
   if (withStretchers) {
-    // 4. end stretchers: hidden corner connector in each end plus an L bracket under it
+    // 4. end stretchers: an L bracket under each end, against the leg
     tag = 'endStretchers';
     for (const x of [p / 2, W - p / 2]) {
       barY(D - 2 * p, x, p, stretcherZ, `End stretcher ${name} × ${D - 2 * p} mm`);
       for (const [y, sy] of [[p, 1], [D - p, -1]])
       {
         add(orient(lBracket(p, p * 0.875, 2.5, frame, p), [0, sy, 0], [0, 0, -1], at(x, y, stretcherZ)), `2 Hole Inside Corner Bracket ${name}`, 2);
-        // hidden corner connector in the corner above the joint: one arm in the stretcher's
-        // top slot, one up the leg's facing slot
-        add(orient(hiddenConnector(p, frame), [0, sy, 0], [0, 0, 1], at(x, y, stretcherZ + p)), `Hidden Corner Connector ${name}`, 0);
       }
     }
     // 5. back stretcher between the back legs
@@ -818,7 +815,6 @@ function buildDesk(design) {
     barX(W - 2 * p, p, D - p / 2, stretcherZ, `Back stretcher ${name} × ${W - 2 * p} mm`);
     for (const [x, sx] of [[p, 1], [W - p, -1]]) {
       add(orient(lBracket(p, p * 0.875, 2.5, frame, p), [sx, 0, 0], [0, 0, -1], at(x, D - p / 2, stretcherZ)), `2 Hole Inside Corner Bracket ${name}`, 2);
-      add(orient(hiddenConnector(p, frame), [sx, 0, 0], [0, 0, 1], at(x, D - p / 2, stretcherZ + p)), `Hidden Corner Connector ${name}`, 0);
     }
     // 6. a 4 hole inside corner gusset lying flat in the inside of each back corner, its
     //    legs bolted into the inner side slots of the end and back stretchers (CPlot p.21-23)

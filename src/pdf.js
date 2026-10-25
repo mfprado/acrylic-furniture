@@ -275,7 +275,7 @@ function deskHardware(doc, design, shots, { M, getY, setY, heading }) {
     [shots.tNut, 'Drop-in T-nut', `${parts.fasteners}x  ${prof.nut}`],
     [shots.bolt, 'Button head bolt', `${parts.fasteners}x  ${prof.bolt}`],
     [shots.foot, 'Levelling foot', `${parts.feet}x  ${prof.footThread} thread`],
-    [shots.hiddenConnector, 'Hidden Corner Connector', `${parts.hiddenConnectors}x  L in the slots at the joint, M5 grub screws`],
+    ...(parts.hiddenConnectors ? [[shots.hiddenConnector, 'Hidden Corner Connector', `${parts.hiddenConnectors}x  centre rail ends, M5 grub screws`]] : []),
     ...(parts.threeHolePlates ? [[shots.joiningPlate3, '3 Hole Joining Plate', `${parts.threeHolePlates}x  across the centre rail`]] : []),
     [shots.tab, 'Joining plate', `${parts.tabs}x  under the rails, carrying the top`],
   ];

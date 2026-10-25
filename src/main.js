@@ -16,13 +16,21 @@ function partShots() {
 }
 
 // Info box for a clicked part
-function showPart(name, count) {
+function showPart(name, names) {
   const box = $('partInfo');
   const info = partInfo(name);
   box.querySelector('h3').textContent = info.title;
   box.querySelector('.code').textContent = info.code ? `Part ${info.code} or equivalent` : '';
   box.querySelector('.text').textContent = info.text;
-  box.querySelector('.qty').textContent = `${count} in this design`;
+  // Profiles cut to the same length are the same piece whatever their role, so count them
+  // together and list the roles (e.g. long rails and the back stretcher).
+  const cut = name.match(/(\d{4}) × (\d+) mm$/);
+  const same = cut ? names.filter((n) => n.endsWith(cut[0])) : names.filter((n) => n === name);
+  const roles = {};
+  for (const n of same) { const r = n.replace(` ${cut?.[0] ?? ''}`, ''); roles[r] = (roles[r] ?? 0) + 1; }
+  box.querySelector('.qty').textContent = cut && Object.keys(roles).length > 1
+    ? `${same.length} pieces of ${cut[2]} mm in this design: ${Object.entries(roles).map(([r, k]) => `${r.toLowerCase()} ×${k}`).join(', ')}`
+    : `${same.length} in this design`;
   // small render of the part, the same one the PDF hardware page uses
   const img = box.querySelector('img');
   const shot = info.shot && partShots()?.[info.shot];
