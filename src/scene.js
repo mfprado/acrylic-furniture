@@ -695,8 +695,9 @@ function buildDesk(design) {
       t.rotation.y = Math.PI / 2;
     }
 
-  // 9. top
+  // 9. top (can be hidden in the viewer to look at the frame; always drawn in the PDF)
   tag = 'top';
+  if (input.showTop === 'no') return g;
   const topZ = railZ + p + TAB_T;
   const wood = new THREE.MeshStandardMaterial({ color: 0xd8c3a0, roughness: 0.8 });
   const lino = input.topFinish === 'linoleum';
@@ -740,7 +741,7 @@ export function renderSteps(design, stepTags) {
   scene.background = new THREE.Color(0xffffff);
   const cam = new THREE.PerspectiveCamera(26, W_PX / H_PX, 1, 50000);
 
-  const flat = { ...design, input: { ...design.input, finish: 'flat' } };
+  const flat = { ...design, input: { ...design.input, finish: 'flat', showTop: 'yes' } };
   const model = buildModel(flat);
   scene.add(model);
 

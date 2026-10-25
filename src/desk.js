@@ -13,6 +13,7 @@ export const DESK_DEFAULTS = {
   topColor: '#c9b8a3',
   stretchers: 'yes', // low side + back stretchers
   frameColor: '#c4c8cc',
+  showTop: 'yes', // 3D view only: hide the top to see the frame and joining plates
 };
 
 // Standard metric T-slot profiles. Centre bore is tapped for the end thread (feet).

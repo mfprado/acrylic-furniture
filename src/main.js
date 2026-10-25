@@ -22,7 +22,7 @@ const TABS = {
   desk: {
     form: $('deskConfig'),
     defaults: DESK_DEFAULTS,
-    strings: ['profile', 'stretchers', 'topFinish', 'topColor', 'frameColor'],
+    strings: ['profile', 'stretchers', 'topFinish', 'topColor', 'frameColor', 'showTop'],
     compute: computeDesk,
     rows: deskRows,
     steps: deskSteps,
