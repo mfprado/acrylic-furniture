@@ -88,7 +88,7 @@ export function computeDesk(input) {
   //    under the stretcher ends (6 joints). The other 2 are listed but not placed.
   //  - Hidden Corner Connector (HC-010-A, inside to inside): 6, in the ends of the end and
   //    back stretchers, gripping the leg slots (CPlot p.12-19). Only the access hole shows.
-  //    Two more join the optional centre rail to the long rails.
+  //    Four more join the optional centre rail: one each side of it at both ends.
   //  - 3 Hole Joining Plate: across the optional centre rail, carrying both top panels.
   //  - Joining Plate (JP-010-A): 12 across the top of the rails, one bolt + T-nut into the
   //    rail and one wood screw up into the top through the overhanging hole (CPlot p.26-28)
@@ -96,7 +96,7 @@ export function computeDesk(input) {
   const largeGussets = 4 + backGussets;
   const smallGussets = 4;
   const lBrackets = withStretchers ? 8 : 0;
-  const hiddenConnectors = (withStretchers ? 6 : 0) + (midRail ? 2 : 0);
+  const hiddenConnectors = (withStretchers ? 6 : 0) + (midRail ? 4 : 0); // centre rail: one each side, both ends
   // centre rail: a hidden corner connector in each end joins it to the long rails, and
   // 3 hole plates across it carry both top panels (middle hole bolted, outer holes screwed up)
   const centreSupports = midRail ? Math.max(1, Math.round(D / TAB_SPACING)) : 0;
@@ -203,7 +203,7 @@ export function deskSteps(d) {
     `Short top rails (${input.depth - 2 * p} mm): bolt a 2 hole inside corner gusset to the underside of each end, with a T-nut on its free face. ${loose}`,
     `Long top rails (${input.width - 2 * p} mm): bolt a 4 hole inside corner gusset to the underside of each end, with two T-nuts on its free face. ${loose}`,
     `Legs (${legLength} mm, tap the foot end ${prof.endTap} if needed): slide a leg onto the gusset at each end of a long rail, top flush with the rail. Tighten. You now have two U frames.`,
-    `Join the two U frames with the short rails, sliding their gussets into the legs, and tighten${midRail ? `. Add the centre rail at ${Math.round(input.width / 2)} mm between the long rails, level with them, with a hidden corner connector in each end gripping the long rail slot` : ''}.`,
+    `Join the two U frames with the short rails, sliding their gussets into the legs, and tighten${midRail ? `. Add the centre rail at ${Math.round(input.width / 2)} mm between the long rails, level with them, with two hidden corner connectors at each end, one each side, in the inside corners` : ''}.`,
     ...(withStretchers
       ? [
           `End stretchers (${input.depth - 2 * p} mm): fit a hidden corner connector into each end and bolt a 2 hole inside corner bracket under each end, T-nut on the free face. Mark ${stretcherZ} mm up from the foot end of each leg, slide them in with their undersides on the marks and tighten the connector set screws and the brackets.`,

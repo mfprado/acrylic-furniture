@@ -41,7 +41,7 @@ const PARTS = [
   {
     match: /^Hidden Corner Connector/,
     title: () => 'Hidden Corner Connector (inside to inside)',
-    text: 'Small L (about 25 × 26 mm arms, 9 mm wide) that sits inside the slots of both profiles at an inside corner, one arm in each, locked with an M5 grub screw per arm. Barely visible once fitted.',
+    text: 'Small L (about 25 × 26 mm arms, 9 mm wide) that sits in the inside corner of a joint, one arm in the facing slot of each profile, locked with an M5 grub screw per arm. Barely visible once fitted.',
     code: 'HC-010-A',
     shot: 'hiddenConnector',
     search: () => '10 Series Hidden Corner Connector',

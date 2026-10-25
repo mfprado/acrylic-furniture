@@ -658,27 +658,28 @@ function mountingTab(p, t, mat, gap = 0) {
   return g;
 }
 
-// Hidden Corner Connector (inside to inside, HC-010-A style): a small L that sits inside
-// the slots of both profiles at an inside corner, one arm in each slot, locked by an M5
-// grub screw in each arm. Arms ~1" long (25/26 mm), 9 mm wide, with a 4 mm lip that rides
-// under the slot opening. Origin where the two slot centre lines cross on the face; arms
-// along local +x and +y, local +z out of the slot.
+// Hidden Corner Connector (inside to inside, HC-010-A style): a small L that sits in the
+// inside corner of a joint, one arm in the facing slot of each profile, locked by an M5 grub
+// screw per arm. Arms ~1" long (25/26 mm), 9 mm wide, with a 4 mm lip in the slot opening.
+// Same convention as lBracket: corner at the origin, profiles at local y < 0 and x < 0,
+// arms along +x and +y, width along local z.
 function hiddenConnector(p, mat) {
   const g = new THREE.Group();
-  const L = p;
   const w = p * 0.35;
   const body = p * 0.18; // part in the slot cavity
-  const lip = p * 0.12; // narrower ridge up into the slot opening
-  for (const along of ['x', 'y']) {
-    const len = along === 'x' ? L : L * 0.96;
-    const base = mesh(new THREE.BoxGeometry(along === 'x' ? len : w, along === 'x' ? w : len, body), mat);
-    base.position.set(along === 'x' ? len / 2 : 0, along === 'x' ? 0 : len / 2, -lip - body / 2);
-    const ridge = mesh(new THREE.BoxGeometry(along === 'x' ? len : w * 0.6, along === 'x' ? w * 0.6 : len, lip), mat);
-    ridge.position.set(along === 'x' ? len / 2 : 0, along === 'x' ? 0 : len / 2, -lip / 2);
+  const lip = p * 0.12; // ridge in the slot opening, flush with the face
+  for (const [len, ax] of [[p, 'x'], [p * 0.96, 'y']]) {
+    const alongX = ax === 'x';
+    const box = (thick, offset, width) => {
+      const m = mesh(new THREE.BoxGeometry(alongX ? len : thick, alongX ? thick : len, width), mat);
+      m.position.set(alongX ? len / 2 : -offset, alongX ? -offset : len / 2, 0);
+      return m;
+    };
+    g.add(box(body, lip + body / 2, w), box(lip, lip / 2, w * 0.6));
     const screw = mesh(new THREE.CylinderGeometry(p * 0.1, p * 0.1, 0.6, 16), dark);
-    screw.rotation.x = Math.PI / 2;
-    screw.position.set(along === 'x' ? len * 0.65 : 0, along === 'x' ? 0 : len * 0.65, 0.05);
-    g.add(base, ridge, screw);
+    if (!alongX) screw.rotation.z = Math.PI / 2;
+    screw.position.set(alongX ? len * 0.65 : 0.05, alongX ? 0.05 : len * 0.65, 0);
+    g.add(screw);
   }
   return g;
 }
@@ -782,9 +783,11 @@ function buildDesk(design) {
     // optional centre rail between the long rails, joined level with hidden connectors
     barY(D - 2 * p, W / 2, p, railZ, `Centre rail ${name} × ${D - 2 * p} mm`);
     // a hidden corner connector in each end grips the long rail slot; nothing shows below
-    // in the bottom slots: one arm along the long rail, one along the centre rail
-    for (const [y, sy] of [[p / 2, 1], [D - p / 2, -1]])
-      add(orient(hiddenConnector(p, frame), [sy, 0, 0], [0, sy, 0], at(W / 2, y, railZ)), `Hidden Corner Connector ${name}`, 0);
+    // two hidden corner connectors at each end, one each side of the centre rail, in the
+    // inside corners: one arm in the long rail's inner slot, one in the centre rail's side slot
+    for (const [y, sy] of [[p, 1], [D - p, -1]])
+      for (const sx of [1, -1])
+        add(orient(hiddenConnector(p, frame), [0, sy, 0], [sx, 0, 0], at(W / 2 + (sx * p) / 2, y, railZ + p / 2)), `Hidden Corner Connector ${name}`, 0);
   }
 
   // 2. long top rails (between the legs) with a 4-hole gusset under each end
@@ -805,9 +808,9 @@ function buildDesk(design) {
       for (const [y, sy] of [[p, 1], [D - p, -1]])
       {
         add(orient(lBracket(p, p * 0.875, 2.5, frame, p), [0, sy, 0], [0, 0, -1], at(x, y, stretcherZ)), `2 Hole Inside Corner Bracket ${name}`, 2);
-        // hidden corner connector in the inner face slots: one arm up the leg, one along the stretcher
-        const sxIn = x < W / 2 ? 1 : -1;
-        add(orient(hiddenConnector(p, frame), [0, 0, sxIn * sy], [0, sy, 0], at(x + (sxIn * p) / 2, y - (sy * p) / 2, stretcherZ + p / 2)), `Hidden Corner Connector ${name}`, 0);
+        // hidden corner connector in the corner above the joint: one arm in the stretcher's
+        // top slot, one up the leg's facing slot
+        add(orient(hiddenConnector(p, frame), [0, sy, 0], [0, 0, 1], at(x, y, stretcherZ + p)), `Hidden Corner Connector ${name}`, 0);
       }
     }
     // 5. back stretcher between the back legs
@@ -815,7 +818,7 @@ function buildDesk(design) {
     barX(W - 2 * p, p, D - p / 2, stretcherZ, `Back stretcher ${name} × ${W - 2 * p} mm`);
     for (const [x, sx] of [[p, 1], [W - p, -1]]) {
       add(orient(lBracket(p, p * 0.875, 2.5, frame, p), [sx, 0, 0], [0, 0, -1], at(x, D - p / 2, stretcherZ)), `2 Hole Inside Corner Bracket ${name}`, 2);
-      add(orient(hiddenConnector(p, frame), [0, 0, sx], [sx, 0, 0], at(x - (sx * p) / 2, D - p, stretcherZ + p / 2)), `Hidden Corner Connector ${name}`, 0);
+      add(orient(hiddenConnector(p, frame), [sx, 0, 0], [0, 0, 1], at(x, D - p / 2, stretcherZ + p)), `Hidden Corner Connector ${name}`, 0);
     }
     // 6. a 4 hole inside corner gusset lying flat in the inside of each back corner, its
     //    legs bolted into the inner side slots of the end and back stretchers (CPlot p.21-23)
