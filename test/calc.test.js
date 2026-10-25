@@ -66,7 +66,7 @@ test('profile desk matches the CPlot layout', () => {
   assert.ok(wide.warnings.some((w) => w.includes('long rails sag')));
   const rail = computeDesk({ centreRail: 'yes' });
   assert.equal(rail.parts.hiddenConnectors, 4); // centre rail: one each side at both ends
-  assert.equal(rail.parts.threeHolePlates, 2); // across the centre rail under the top
+  assert.equal(rail.parts.threeHolePlates, 0); // hidden connectors support the centre rail
   assert.equal(rail.parts.top.panels, 2);
   assert.equal(rail.parts.top.width, (1220 - 90) / 2);
   assert.equal(computeDesk({ stretchers: 'no' }).parts.cuts.length, 3);

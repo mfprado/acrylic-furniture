@@ -97,9 +97,8 @@ export function computeDesk(input) {
   const smallGussets = 4;
   const lBrackets = withStretchers ? 8 : 0;
   const hiddenConnectors = midRail ? 4 : 0; // centre rail only: one each side, both ends
-  // centre rail: a hidden corner connector in each end joins it to the long rails, and
-  // 3 hole plates across it carry both top panels (middle hole bolted, outer holes screwed up)
-  const centreSupports = midRail ? Math.max(1, Math.round(D / TAB_SPACING)) : 0;
+  // centre rail: hidden corner connectors join it to the long rails; no plates on it
+  const centreSupports = 0; // the hidden connectors already join and support the centre rail
   const threeHolePlates = centreSupports;
   const tabsLong = Math.max(2, Math.round(W / TAB_SPACING));
   const tabsShort = Math.max(1, Math.round(D / TAB_SPACING));
@@ -215,7 +214,7 @@ export function deskSteps(d) {
         ]
       : []),
     `Screw a ${prof.footThread} levelling foot into the end of each leg.`,
-    `Drop ${parts.tabs} T-nuts into the bottom slot of the top rails, about ${TAB_SPACING} mm apart. Bolt a joining plate under the rail at each, so its second hole sticks out under the opening for the top.${midRail ? ` Across the centre rail, bolt ${parts.centreSupports} 3 hole joining plates by their middle hole (one T-nut each) so the outer holes reach under both panels; they take two button head bolts each into the top.` : ''}`,
+    `Drop ${parts.tabs} T-nuts into the bottom slot of the top rails, about ${TAB_SPACING} mm apart. Bolt a joining plate under the rail at each, so its second hole sticks out under the opening for the top.`,
     `Drop the plywood (${parts.top.panels > 1 ? '2 panels, ' : ''}${parts.top.width} × ${parts.top.depth} mm, linoleum side up) in between the top rails. Drive a button head bolt up through each plate's free hole into the top, leaving a ${Math.max(0, d.topGap)} mm gap above the plate so the top sits flush with the rails.`,
     'Level the desk with the feet, then re-tighten every bolt once.',
   ];
