@@ -579,17 +579,20 @@ function mountingTab(p, t, mat) {
   return g;
 }
 
+// Swivel levelling mount as in CPlot's photos: small chrome domed pad, narrower than the
+// leg, on a short threaded stem with a lock nut.
 function levellingFoot(p) {
   const g = new THREE.Group();
-  const pad = mesh(new THREE.CylinderGeometry(p * 0.75, p * 0.8, 5, 32), dark);
-  pad.position.y = 2.5;
-  const base = mesh(new THREE.CylinderGeometry(p * 0.55, p * 0.7, 4, 32), chrome);
-  base.position.y = 7;
-  const nut = mesh(new THREE.CylinderGeometry(p * 0.3, p * 0.3, 3, 6), chrome);
-  nut.position.y = 10.5;
-  const stem = mesh(new THREE.CylinderGeometry(p * 0.13, p * 0.13, 8, 16), chrome);
-  stem.position.y = 13;
-  g.add(pad, base, nut, stem);
+  const pad = mesh(new THREE.CylinderGeometry(p * 0.36, p * 0.42, p * 0.1, 32), dark);
+  pad.position.y = p * 0.05;
+  const dome = mesh(new THREE.SphereGeometry(p * 0.4, 32, 12, 0, Math.PI * 2, 0, Math.PI / 2), chrome);
+  dome.scale.y = 0.55;
+  dome.position.y = p * 0.1;
+  const stem = mesh(new THREE.CylinderGeometry(p * 0.12, p * 0.12, p * 0.35, 16), chrome);
+  stem.position.y = p * 0.45;
+  const nut = mesh(new THREE.CylinderGeometry(p * 0.22, p * 0.22, p * 0.1, 6), chrome);
+  nut.position.y = p * 0.5;
+  g.add(pad, dome, stem, nut);
   return g;
 }
 
@@ -656,13 +659,13 @@ function buildDesk(design) {
     for (const x of [p / 2, W - p / 2]) {
       barY(D - 2 * p, x, p, stretcherZ, `End stretcher ${name} × ${D - 2 * p} mm`);
       for (const [y, sy] of [[p, 1], [D - p, -1]])
-        add(orient(lBracket(p, p * 0.875, 2.5, frame, p), [0, sy, 0], [0, 0, 1], at(x, y, stretcherZ + p)), `2 Hole Inside Corner Bracket ${name}`, 2);
+        add(orient(lBracket(p, p * 0.875, 2.5, frame, p), [0, sy, 0], [0, 0, -1], at(x, y, stretcherZ)), `2 Hole Inside Corner Bracket ${name}`, 2);
     }
     // 5. back stretcher between the back legs
     tag = 'backStretcher';
     barX(W - 2 * p, p, D - p / 2, stretcherZ, `Back stretcher ${name} × ${W - 2 * p} mm`);
     for (const [x, sx] of [[p, 1], [W - p, -1]]) {
-      add(orient(lBracket(p, p * 0.875, 2.5, frame, p), [sx, 0, 0], [0, 0, 1], at(x, D - p / 2, stretcherZ + p)), `2 Hole Inside Corner Bracket ${name}`, 2);
+      add(orient(lBracket(p, p * 0.875, 2.5, frame, p), [sx, 0, 0], [0, 0, -1], at(x, D - p / 2, stretcherZ)), `2 Hole Inside Corner Bracket ${name}`, 2);
     }
     // 6. a flat 2-slot corner plate under each back corner, bolted up into the bottom
     //    slots of the end stretcher and the back stretcher (CPlot cover drawing)

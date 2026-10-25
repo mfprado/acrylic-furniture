@@ -65,8 +65,8 @@ export function computeDesk(input) {
   //  - 4 Hole Inside Corner Gusset (CB-010-K): under each end of the long top rails (4)
   //  - 2 Hole Inside Corner Gusset (CB-010-A): under each end of the short top rails (4),
   //    plus 2 flat under the back stretcher corners, bolted up into both stretchers
-  //  - 2 Hole Inside Corner Bracket (CBS-010-A): 8 in the BOM; CPlot's drawings show 6,
-  //    on top of the stretcher ends. The other 2 are listed but not placed.
+  //  - 2 Hole Inside Corner Bracket (CBS-010-A): 8 in the BOM; CPlot's photos show them
+  //    under the stretcher ends (6 joints). The other 2 are listed but not placed.
   //  - Hidden Corner Connector (HC-010-A): 6, inside the slots, not visible once fitted
   //  - Joining Plate (JP-010-A): 12 on top of the rails, each with 2 screws + 2 T-nuts
   const largeGussets = 4;
@@ -145,8 +145,8 @@ export function deskSteps(d) {
     `Join the two U frames with the short rails, sliding their gussets into the legs, and tighten${midRail ? `. Add the centre rail at ${Math.round(input.width / 2)} mm the same way` : ''}.`,
     ...(withStretchers
       ? [
-          `End stretchers (${input.depth - 2 * p} mm): bolt a 2 hole inside corner bracket on top of each end, T-nut on the free face. Mark ${stretcherZ} mm up from the foot end of each leg, slide them in with their undersides on the marks and tighten.`,
-          `Back stretcher (${input.width - 2 * p} mm): a corner bracket on top of each end, slide it in between the back legs at the same height and tighten.`,
+          `End stretchers (${input.depth - 2 * p} mm): bolt a 2 hole inside corner bracket under each end, T-nut on the free face. Mark ${stretcherZ} mm up from the foot end of each leg, slide them in with their undersides on the marks and tighten.`,
+          `Back stretcher (${input.width - 2 * p} mm): a corner bracket under each end, slide it in between the back legs at the same height and tighten.`,
           'Drop a T-nut into the bottom slot of each end stretcher and of the back stretcher near the back corners, and screw a flat corner plate across the underside of each corner.',
         ]
       : []),
