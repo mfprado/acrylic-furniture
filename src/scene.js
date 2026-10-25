@@ -521,8 +521,25 @@ function orient(obj, a, b, at) {
 }
 
 // Drop-in T-nut as it sits in a slot: small block, pressed against the slot lips.
+// Drop-in T-nut as in the supplier drawing: a narrow stem that sits in the slot opening,
+// a wider body under the slot lips with chamfered back edges, and a tapped hole through.
+// Stem points along local +y (towards the fitting), length along local z.
 function tNut(p) {
-  return mesh(new THREE.BoxGeometry(p * 0.32, p * 0.16, p * 0.42), chrome);
+  const g = new THREE.Group();
+  const hw = p * 0.27, stem = p * 0.13, back = p * 0.17;
+  const s = new THREE.Shape()
+    .moveTo(-stem, p * 0.12).lineTo(stem, p * 0.12).lineTo(stem, 0).lineTo(hw, 0)
+    .lineTo(hw, -p * 0.05).lineTo(back, -p * 0.2).lineTo(-back, -p * 0.2).lineTo(-hw, -p * 0.05)
+    .lineTo(-hw, 0).lineTo(-stem, 0).closePath();
+  const len = p * 0.52;
+  const geo = new THREE.ExtrudeGeometry(s, { depth: len, bevelEnabled: true, bevelThickness: 0.2, bevelSize: 0.2, bevelSegments: 1 });
+  geo.translate(0, 0, -len / 2);
+  g.add(mesh(geo, chrome));
+  const hole = mesh(new THREE.CylinderGeometry(p * 0.1, p * 0.1, p * 0.34, 16), dark);
+  hole.position.y = -p * 0.04;
+  hole.scale.set(1, 1.01, 1);
+  g.add(hole);
+  return g;
 }
 
 // Cast corner gusset: solid right-triangle prism with bolt holes on both faces.
@@ -589,7 +606,7 @@ function gusset(L, w, holes, mat, p) {
     const na = tNut(p);
     na.position.set(at, -p * 0.2, 0);
     const nb = tNut(p);
-    nb.rotation.z = Math.PI / 2;
+    nb.rotation.z = -Math.PI / 2; // stem towards +x, the gusset leg
     nb.position.set(-p * 0.2, at, 0);
     g.add(ha, hb, na, nb);
   }
@@ -622,7 +639,7 @@ function lBracket(L, w, t, mat, p) {
     head.rotation.z = -rz; // dome points away from the profile
     head.position.set(rz ? th : at, rz ? at : th, 0);
     const nut = tNut(p);
-    nut.rotation.z = rz;
+    nut.rotation.z = -rz; // stem towards the bracket
     nut.position.set(rz ? -p * 0.2 : at, rz ? at : -p * 0.2, 0);
     g.add(head, nut);
   }
@@ -647,6 +664,7 @@ function mountingTab(p, t, mat, gap = 0) {
     g.add(head);
   }
   const nut = tNut(p);
+  nut.rotation.x = Math.PI; // rail is above the plate: stem points down
   nut.position.set(-p / 2, t / 2 + p * 0.2, 0);
   g.add(nut);
   // wood screw shank bridging the gap that lifts the top flush with the rails
@@ -701,6 +719,7 @@ function joiningPlate3(p, t, mat, { bolts = [-p, 0, p], gap = 0 } = {}) {
     g.add(head);
     if (bolts.includes(x)) {
       const nut = tNut(p);
+      nut.rotation.x = Math.PI; // rail above: stem points down
       nut.position.set(x, t / 2 + p * 0.2, 0);
       g.add(nut);
     } else if (gap > 0) {

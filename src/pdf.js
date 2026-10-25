@@ -290,10 +290,11 @@ function deskHardware(doc, design, shots, { M, getY, setY, heading }) {
     if (y + cellH > 285) { doc.addPage(); y = 15; }
     const x = M + col * (cell + 4);
     doc.setDrawColor(215).rect(x, y, cell, cellH - 4);
-    const ih = cell * 0.62;
+    const ih = cell * 0.54; // leaves room for a title and two lines of text inside the box
     if (shot) doc.addImage(shot.url, 'JPEG', x + (cell - ih * (shot.w / shot.h)) / 2, y + 1, ih * (shot.w / shot.h), ih);
     doc.setFont('courier', 'bold').setFontSize(8).setTextColor(20).text(title, x + 2, y + ih + 5, { maxWidth: cell - 4 });
-    doc.setFont('courier', 'normal').setFontSize(7.5).setTextColor(60).text(line, x + 2, y + ih + 9.5, { maxWidth: cell - 4 });
+    const lines = doc.setFont('courier', 'normal').setFontSize(7.5).splitTextToSize(line, cell - 4).slice(0, 2);
+    doc.setTextColor(60).text(lines, x + 2, y + ih + 9.5);
   });
   setY(y + cellH + 2);
 }
