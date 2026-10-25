@@ -465,6 +465,35 @@ function orient(obj, a, b, at) {
   return obj;
 }
 
+// Flat corner plate as CPlot draws it at the back stretcher corners: a right-triangle
+// plate (3/16" thick) under the joint with one slotted hole along each stretcher.
+// Origin where the two stretcher centre lines cross; arms along local +x and +y.
+function cornerPlate(L, p, mat) {
+  const g = new THREE.Group();
+  const t = p * 0.1875;
+  const h = p / 2;
+  const shape = new THREE.Shape().moveTo(-h, -h).lineTo(L, -h).lineTo(L, h).lineTo(h, L).lineTo(-h, L).closePath();
+  const slot = (cx, cy, along) => {
+    const len = p * 0.45, r = p * 0.14;
+    const path = new THREE.Path();
+    if (along === 'x') path.absarc(cx + len / 2, cy, r, -Math.PI / 2, Math.PI / 2, false).absarc(cx - len / 2, cy, r, Math.PI / 2, Math.PI * 1.5, false);
+    else path.absarc(cx, cy + len / 2, r, 0, Math.PI, false).absarc(cx, cy - len / 2, r, Math.PI, Math.PI * 2, false);
+    return path;
+  };
+  shape.holes.push(slot(L * 0.6, 0, 'x'), slot(0, L * 0.6, 'y'));
+  const m = mesh(new THREE.ExtrudeGeometry(shape, { depth: t, bevelEnabled: true, bevelThickness: 0.4, bevelSize: 0.4, bevelSegments: 1 }), mat);
+  g.add(m);
+  for (const [x, y] of [[L * 0.6, 0], [0, L * 0.6]]) {
+    const head = mesh(new THREE.CylinderGeometry(p * 0.16, p * 0.16, 2, 16), dark);
+    head.rotation.x = Math.PI / 2;
+    head.position.set(x, y, -1);
+    const nut = tNut(p);
+    nut.position.set(x, y, t + p * 0.2);
+    g.add(head, nut);
+  }
+  return g;
+}
+
 // Drop-in T-nut as it sits in a slot: small block, pressed against the slot lips.
 function tNut(p) {
   return mesh(new THREE.BoxGeometry(p * 0.32, p * 0.16, p * 0.42), chrome);
@@ -634,14 +663,16 @@ function buildDesk(design) {
     barX(W - 2 * p, p, D - p / 2, stretcherZ, `Back stretcher ${name} × ${W - 2 * p} mm`);
     for (const [x, sx] of [[p, 1], [W - p, -1]]) {
       add(orient(lBracket(p, p * 0.875, 2.5, frame, p), [sx, 0, 0], [0, 0, 1], at(x, D - p / 2, stretcherZ + p)), `2 Hole Inside Corner Bracket ${name}`, 2);
-      // second bracket under the same joint, as CPlot's 8 brackets imply
-      add(orient(lBracket(p, p * 0.875, 2.5, frame, p), [sx, 0, 0], [0, 0, -1], at(x, D - p / 2, stretcherZ)), `2 Hole Inside Corner Bracket ${name}`, 2);
     }
-    // 6. a 2 hole gusset lying flat in each back corner, against the inner faces of the
-    //    end stretcher and the back stretcher
+    // 6. a flat 2-slot corner plate under each back corner, bolted up into the bottom
+    //    slots of the end stretcher and the back stretcher (CPlot cover drawing)
     tag = 'backGussets';
-    for (const [x, sx] of [[p, 1], [W - p, -1]])
-      add(orient(gusset(p, p * 0.875, 1, frame, p), [sx, 0, 0], [0, -1, 0], at(x, D - p, stretcherZ + p / 2)), `2 Hole Inside Corner Gusset ${name}`, 2);
+    for (const [x, , sx] of legs.filter(([, , , sy]) => sy < 0)) {
+      // basis chosen so the plate's thickness grows upward, against the stretchers
+      const [a, b] = sx > 0 ? [[1, 0, 0], [0, -1, 0]] : [[0, -1, 0], [-1, 0, 0]];
+      const t = p * 0.1875;
+      add(orient(cornerPlate(p * 2.2, p, frame), a, b, at(x, D - p / 2, stretcherZ - t)), `2 Hole Inside Corner Gusset ${name}`, 2);
+    }
   }
 
   // 7. feet

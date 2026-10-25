@@ -64,8 +64,9 @@ export function computeDesk(input) {
   // Fittings from CPlot's Studio Desk bill of materials (T-Nutz 10 series parts):
   //  - 4 Hole Inside Corner Gusset (CB-010-K): under each end of the long top rails (4)
   //  - 2 Hole Inside Corner Gusset (CB-010-A): under each end of the short top rails (4),
-  //    plus 2 lying flat at the back corners tying end and back stretchers together
-  //  - 2 Hole Inside Corner Bracket (CBS-010-A): on the stretcher ends (8)
+  //    plus 2 flat under the back stretcher corners, bolted up into both stretchers
+  //  - 2 Hole Inside Corner Bracket (CBS-010-A): 8 in the BOM; CPlot's drawings show 6,
+  //    on top of the stretcher ends. The other 2 are listed but not placed.
   //  - Hidden Corner Connector (HC-010-A): 6, inside the slots, not visible once fitted
   //  - Joining Plate (JP-010-A): 12 on top of the rails, each with 2 screws + 2 T-nuts
   const largeGussets = 4;
@@ -145,8 +146,8 @@ export function deskSteps(d) {
     ...(withStretchers
       ? [
           `End stretchers (${input.depth - 2 * p} mm): bolt a 2 hole inside corner bracket on top of each end, T-nut on the free face. Mark ${stretcherZ} mm up from the foot end of each leg, slide them in with their undersides on the marks and tighten.`,
-          `Back stretcher (${input.width - 2 * p} mm): a corner bracket above and below each end, slide it in between the back legs at the same height and tighten.`,
-          'Drop T-nuts into the inner faces of the end stretchers and the back stretcher at the back corners, and screw a 2 hole inside corner gusset flat across each corner.',
+          `Back stretcher (${input.width - 2 * p} mm): a corner bracket on top of each end, slide it in between the back legs at the same height and tighten.`,
+          'Drop a T-nut into the bottom slot of each end stretcher and of the back stretcher near the back corners, and screw a flat corner plate across the underside of each corner.',
         ]
       : []),
     `Screw a ${prof.footThread} levelling foot into the end of each leg.`,
