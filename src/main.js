@@ -1,10 +1,41 @@
 import { computeDesign, assemblySteps, cutMyOrder, DEFAULTS, SHEET_MATERIALS } from './calc.js';
 import { computeDesk, deskRows, deskSteps, DESK_DEFAULTS } from './desk.js';
+import { partInfo } from './partinfo.js';
 import { createViewer, renderParts, renderSteps, shelfStepTags, deskStepTags } from './scene.js';
 import { downloadSpec } from './pdf.js';
 
-const viewer = createViewer(document.querySelector('#viewer'));
+const viewer = createViewer(document.querySelector('#viewer'), { onPick: showPart });
+
+// Part renders are slow to make, so build them once per design, on the first click.
+let shotsFor = null;
+let shotsCache = null;
+function partShots() {
+  if (!current) return null;
+  if (shotsFor !== current) { shotsCache = renderParts(current); shotsFor = current; }
+  return shotsCache;
+}
+
+// Info box for a clicked part
+function showPart(name, count) {
+  const box = $('partInfo');
+  const info = partInfo(name);
+  box.querySelector('h3').textContent = info.title;
+  box.querySelector('.code').textContent = info.code ? `Part ${info.code} or equivalent` : '';
+  box.querySelector('.text').textContent = info.text;
+  box.querySelector('.qty').textContent = `${count} in this design`;
+  // small render of the part, the same one the PDF hardware page uses
+  const img = box.querySelector('img');
+  const shot = info.shot && partShots()?.[info.shot];
+  img.hidden = !shot;
+  if (shot) img.src = shot.url;
+  const a = box.querySelector('.link');
+  a.hidden = !info.link;
+  if (info.link) a.href = info.link;
+  box.hidden = false;
+}
 const $ = (id) => document.getElementById(id);
+$('partInfo').querySelector('.close').addEventListener('click', () => ($('partInfo').hidden = true));
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('partInfo').hidden = true; });
 
 // One entry per furniture type. Each tab keeps its own form, saved settings and camera.
 const TABS = {

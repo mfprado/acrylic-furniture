@@ -50,10 +50,10 @@ test('profile desk matches the CPlot layout', () => {
   const d = computeDesk({});
   assert.equal(d.size, 30); // 1220 x 740 -> 3030
   assert.equal(d.parts.cuts.find((c) => c.role.startsWith('Leg')).qty, 4);
-  assert.equal(d.legLength, 740 - 15); // legs reach the top of the frame, above the foot
+  assert.equal(d.legLength, 740 - 30); // levelling mount lifts the leg end one profile // legs reach the top of the frame, above the foot
   assert.equal(d.parts.top.width, 1220 - 60); // top drops in between the rails
-  assert.equal(d.parts.largeGussets, 4); // CPlot BOM
-  assert.equal(d.parts.smallGussets, 6);
+  assert.equal(d.parts.largeGussets, 6); // 4 at the top corners, 2 flat in the back low corners
+  assert.equal(d.parts.smallGussets, 4);
   assert.equal(d.parts.cuts[1].length, 1220 - 60); // long rails fit between the legs
   assert.equal(d.parts.lBrackets, 8);
   assert.equal(d.parts.hiddenConnectors, 6);
@@ -65,7 +65,8 @@ test('profile desk matches the CPlot layout', () => {
   assert.ok(wide.check.railSag > wide.check.railLimit); // no centre rail: long thin rails warn
   assert.ok(wide.warnings.some((w) => w.includes('long rails sag')));
   const rail = computeDesk({ centreRail: 'yes' });
-  assert.equal(rail.parts.hiddenConnectors, 8); // centre rail joins with HC-010-A
+  assert.equal(rail.parts.hiddenConnectors, 8); // centre rail ends join with hidden connectors
+  assert.equal(rail.parts.threeHolePlates, 2); // across the centre rail under the top
   assert.equal(rail.parts.top.panels, 2);
   assert.equal(rail.parts.top.width, (1220 - 90) / 2);
   assert.equal(computeDesk({ stretchers: 'no' }).parts.cuts.length, 3);

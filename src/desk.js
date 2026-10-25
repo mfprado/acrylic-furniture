@@ -25,7 +25,6 @@ export const PROFILES = {
   40: { p: 40, slot: 8, endTap: 'M8', bolt: 'M8 x 16 button head', nut: 'M8 drop-in T-nut', footThread: 'M8' },
 };
 
-const FOOT_HEIGHT = 15; // levelling foot, screwed most of the way in
 export const TAB_THICKNESS = 5; // joining plates (3/16") under the rails carry the inset top
 const TAB_SPACING = 300; // joining plates on top of the rails, roughly every 300 mm
 const SHEET_MAX = 2440; // longest standard plywood sheet (8 ft)
@@ -52,6 +51,8 @@ export function computeDesk(input) {
   const prof = PROFILES[size];
   const p = prof.p;
 
+  // levelling mount for 1" rail (McMaster 47065T341) lifts the leg end about one profile
+  const FOOT_HEIGHT = p;
   const railZ = H - p; // underside of the top rails
   // CPlot's top is inset: cut to fit between the rails, resting on the joining plates
   // bolted under them, so it sits flush with (or below) the top of the frame.
@@ -79,24 +80,31 @@ export function computeDesk(input) {
   }
 
   // Fittings from CPlot's Studio Desk bill of materials (T-Nutz 10 series parts):
-  //  - 4 Hole Inside Corner Gusset (CB-010-K): under each end of the long top rails (4)
-  //  - 2 Hole Inside Corner Gusset (CB-010-A): under each end of the short top rails (4),
-  //    plus 2 flat under the back stretcher corners, bolted up into both stretchers
+  //  - 4 Hole Inside Corner Gusset (CB-010-K): under each end of the long top rails (4),
+  //    plus 2 lying flat in the back low corners joining the end and back stretchers
+  //    (CPlot p.21-23; the BOM lists 4 of these and 6 of the 2 hole ones)
+  //  - 2 Hole Inside Corner Gusset (CB-010-A): under each end of the short top rails (4)
   //  - 2 Hole Inside Corner Bracket (CBS-010-A): 8 in the BOM; CPlot's photos show them
   //    under the stretcher ends (6 joints). The other 2 are listed but not placed.
   //  - Hidden Corner Connector (HC-010-A, inside to inside): 6, in the ends of the end and
-  //    back stretchers, gripping the leg slots (CPlot p.12-19), plus 2 for an optional centre
-  //    rail between the long rails. Only the access hole shows.
+  //    back stretchers, gripping the leg slots (CPlot p.12-19). Only the access hole shows.
+  //    Two more join the optional centre rail to the long rails.
+  //  - 3 Hole Joining Plate: across the optional centre rail, carrying both top panels.
   //  - Joining Plate (JP-010-A): 12 across the top of the rails, one bolt + T-nut into the
   //    rail and one wood screw up into the top through the overhanging hole (CPlot p.26-28)
-  const largeGussets = 4;
-  const smallGussets = 4 + (withStretchers ? 2 : 0);
+  const backGussets = withStretchers ? 2 : 0; // 4 hole gussets flat in the back low corners
+  const largeGussets = 4 + backGussets;
+  const smallGussets = 4;
   const lBrackets = withStretchers ? 8 : 0;
   const hiddenConnectors = (withStretchers ? 6 : 0) + (midRail ? 2 : 0);
+  // centre rail: a hidden corner connector in each end joins it to the long rails, and
+  // 3 hole plates across it carry both top panels (middle hole bolted, outer holes screwed up)
+  const centreSupports = midRail ? Math.max(1, Math.round(D / TAB_SPACING)) : 0;
+  const threeHolePlates = centreSupports;
   const tabsLong = Math.max(2, Math.round(W / TAB_SPACING));
   const tabsShort = Math.max(1, Math.round(D / TAB_SPACING));
-  const tabs = 2 * tabsLong + 2 * tabsShort + (midRail ? 2 * tabsShort : 0);
-  const fasteners = largeGussets * 4 + smallGussets * 2 + lBrackets * 2 + tabs;
+  const tabs = 2 * tabsLong + 2 * tabsShort;
+  const fasteners = largeGussets * 4 + smallGussets * 2 + lBrackets * 2 + tabs + centreSupports;
 
   const warnings = [];
   if (size < recommended)
@@ -151,8 +159,11 @@ export function computeDesk(input) {
       profileTotal: cuts.reduce((s, c) => s + c.length * c.qty, 0),
       largeGussets,
       smallGussets,
+      backGussets,
       lBrackets,
       hiddenConnectors,
+      threeHolePlates,
+      centreSupports,
       tabs,
       tabsLong,
       tabsShort,
@@ -173,9 +184,10 @@ export function deskRows({ parts, size, prof }) {
     ...(parts.lBrackets ? [['2 Hole Inside Corner Bracket', `${size} series (CBS-010-A equivalent)`, parts.lBrackets]] : []),
     ['Hidden Corner Connector', `${size} series (HC-010-A equivalent), set-screw`, parts.hiddenConnectors],
     ['Joining Plate', `${size} series, 2 holes (JP-010-A equivalent)`, parts.tabs],
+    ...(parts.threeHolePlates ? [['3 Hole Joining Plate', `${size} series, straight, across the centre rail under the top`, parts.threeHolePlates]] : []),
     ['Bolt', prof.bolt, parts.fasteners],
     ['T-nut', prof.nut, parts.fasteners],
-    ['Wood screw', 'for the top, through the joining plates; length = gap + plate + about 12 mm into the plywood', parts.tabs],
+    ['Wood screw', 'for the top, through the joining plates; length = gap + plate + about 12 mm into the plywood', parts.tabs + 2 * parts.centreSupports],
     ['Levelling foot', `${prof.footThread} thread, into the leg end bore`, parts.feet],
     ['Plywood top', `${parts.top.width} × ${parts.top.depth} × ${parts.top.thickness} mm`, parts.top.panels],
     ...(parts.top.finish === 'linoleum' ? [['Linoleum sheet', `${parts.top.width} × ${parts.top.depth} mm, glued to the top`, parts.top.panels]] : []),
@@ -191,16 +203,16 @@ export function deskSteps(d) {
     `Short top rails (${input.depth - 2 * p} mm): bolt a 2 hole inside corner gusset to the underside of each end, with a T-nut on its free face. ${loose}`,
     `Long top rails (${input.width - 2 * p} mm): bolt a 4 hole inside corner gusset to the underside of each end, with two T-nuts on its free face. ${loose}`,
     `Legs (${legLength} mm, tap the foot end ${prof.endTap} if needed): slide a leg onto the gusset at each end of a long rail, top flush with the rail. Tighten. You now have two U frames.`,
-    `Join the two U frames with the short rails, sliding their gussets into the legs, and tighten${midRail ? `. Add the centre rail at ${Math.round(input.width / 2)} mm between the long rails, level with them, with a hidden corner connector in each end` : ''}.`,
+    `Join the two U frames with the short rails, sliding their gussets into the legs, and tighten${midRail ? `. Add the centre rail at ${Math.round(input.width / 2)} mm between the long rails, level with them, with a hidden corner connector in each end gripping the long rail slot` : ''}.`,
     ...(withStretchers
       ? [
           `End stretchers (${input.depth - 2 * p} mm): fit a hidden corner connector into each end and bolt a 2 hole inside corner bracket under each end, T-nut on the free face. Mark ${stretcherZ} mm up from the foot end of each leg, slide them in with their undersides on the marks and tighten the connector set screws and the brackets.`,
-          `Back stretcher (${input.width - 2 * p} mm): a hidden corner connector in each end and a corner bracket under it, slide it in between the back legs at the same height and tighten${midRail ? `. Add the centre rail at ${Math.round(input.width / 2)} mm between the long rails, level with them, with a hidden corner connector in each end` : ''}.`,
-          'Drop a T-nut into the bottom slot of each end stretcher and of the back stretcher near the back corners, and screw a flat corner plate across the underside of each corner.',
+          `Back stretcher (${input.width - 2 * p} mm): a hidden corner connector in each end and a corner bracket under it, slide it in between the back legs at the same height and tighten.`,
+          'Back corners: drop two T-nuts into the inner side slot of the end stretcher and two into the back stretcher, next to each back leg. Set a 4 hole inside corner gusset flat into the inside corner and bolt it to both stretchers, four screws per corner.',
         ]
       : []),
     `Screw a ${prof.footThread} levelling foot into the end of each leg.`,
-    `Drop ${parts.tabs} T-nuts into the bottom slot of the top rails, about ${TAB_SPACING} mm apart. Bolt a joining plate under the rail at each, so its second hole sticks out under the opening for the top.`,
+    `Drop ${parts.tabs} T-nuts into the bottom slot of the top rails, about ${TAB_SPACING} mm apart. Bolt a joining plate under the rail at each, so its second hole sticks out under the opening for the top.${midRail ? ` Across the centre rail, bolt ${parts.centreSupports} 3 hole joining plates by their middle hole so the outer holes reach under both panels.` : ''}`,
     `Drop the plywood (${parts.top.panels > 1 ? '2 panels, ' : ''}${parts.top.width} × ${parts.top.depth} mm, linoleum side up) in between the top rails. Drive a wood screw up through each plate's free hole into the top, leaving a ${Math.max(0, d.topGap)} mm gap above the plate so the top sits flush with the rails.`,
     'Level the desk with the feet, then re-tighten every bolt once.',
   ];

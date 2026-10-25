@@ -10,7 +10,7 @@ const acrylic = new THREE.MeshPhysicalMaterial({
   transparent: true, opacity: 0.9, side: THREE.DoubleSide,
 });
 
-export function createViewer(container) {
+export function createViewer(container, { onPick } = {}) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -54,6 +54,57 @@ export function createViewer(container) {
     renderer.render(scene, camera);
   });
 
+  // Hover a part to outline it and see its name; click (without dragging) to open its info.
+  const ray = new THREE.Raycaster();
+  const ptr = new THREE.Vector2();
+  const outline = new THREE.BoxHelper(undefined, 0x15171a);
+  outline.visible = false;
+  scene.add(outline);
+  const label = Object.assign(document.createElement('div'), { className: 'part-label' });
+  label.hidden = true;
+  container.appendChild(label);
+  let hovered = null;
+  const partAt = (e) => {
+    const r = renderer.domElement.getBoundingClientRect();
+    ptr.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+    ray.setFromCamera(ptr, camera);
+    for (const hit of ray.intersectObject(model, true)) {
+      let o = hit.object;
+      while (o && o !== model && !o.userData.part) o = o.parent;
+      if (o && o !== model && o.visible !== false) return o;
+    }
+    return null;
+  };
+  renderer.domElement.addEventListener('pointermove', (e) => {
+    if (e.buttons) return; // orbiting
+    const o = partAt(e);
+    hovered = o;
+    outline.visible = !!o;
+    renderer.domElement.style.cursor = o ? 'pointer' : '';
+    label.hidden = !o;
+    if (!o) return;
+    outline.setFromObject(o);
+    label.textContent = o.userData.part;
+    const r = container.getBoundingClientRect();
+    label.style.left = `${e.clientX - r.left + 14}px`;
+    label.style.top = `${e.clientY - r.top + 14}px`;
+  });
+  renderer.domElement.addEventListener('pointerleave', () => {
+    outline.visible = false;
+    label.hidden = true;
+  });
+  let down = null;
+  renderer.domElement.addEventListener('pointerdown', (e) => (down = [e.clientX, e.clientY]));
+  renderer.domElement.addEventListener('pointerup', (e) => {
+    if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 4) return;
+    const o = partAt(e);
+    if (!o || !onPick) return;
+    // how many of the same part are in the model
+    let count = 0;
+    model.traverse((c) => { if (c.userData.part === o.userData.part) count++; });
+    onPick(o.userData.part, count);
+  });
+
   return {
     snapshot() {
       renderer.render(scene, camera);
@@ -69,6 +120,8 @@ export function createViewer(container) {
     },
     show(design, { keepCamera = false } = {}) {
       scene.remove(model);
+      outline.visible = false;
+      label.hidden = true;
       acrylic.color.set(design.input.color ?? '#202d6a');
       model = buildModel(design);
       scene.add(model);
@@ -379,10 +432,12 @@ export function renderParts(design) {
       largeGusset: shot(gusset(p * 2, p * 0.875, 2, frame, p), new THREE.Vector3(0.6, 0.5, 1.4)),
       smallGusset: shot(gusset(p, p * 0.875, 1, frame, p), new THREE.Vector3(0.6, 0.5, 1.4)),
       lBracket: shot(lBracket(p, p * 0.875, 2.5, frame, p), new THREE.Vector3(0.6, 0.5, 1.4)),
+      joiningPlate3: shot(joiningPlate3(p, 5, frame), new THREE.Vector3(0.5, -1.2, 1)),
       tNut: shot(nut),
       bolt: shot(bolt),
       foot: shot(levellingFoot(p)),
       tab: shot(mountingTab(p, 5, frame), new THREE.Vector3(0.5, 1.2, 1)),
+      hiddenConnector: shot(hiddenConnector(p, frame), new THREE.Vector3(0.8, 0.7, 1.2)),
     };
     pmrem.dispose();
     r.dispose();
@@ -465,35 +520,6 @@ function orient(obj, a, b, at) {
   return obj;
 }
 
-// Flat corner plate as CPlot draws it at the back stretcher corners: a right-triangle
-// plate (3/16" thick) under the joint with one slotted hole along each stretcher.
-// Origin where the two stretcher centre lines cross; arms along local +x and +y.
-function cornerPlate(L, p, mat) {
-  const g = new THREE.Group();
-  const t = p * 0.1875;
-  const h = p / 2;
-  const shape = new THREE.Shape().moveTo(-h, -h).lineTo(L, -h).lineTo(L, h).lineTo(h, L).lineTo(-h, L).closePath();
-  const slot = (cx, cy, along) => {
-    const len = p * 0.45, r = p * 0.14;
-    const path = new THREE.Path();
-    if (along === 'x') path.absarc(cx + len / 2, cy, r, -Math.PI / 2, Math.PI / 2, false).absarc(cx - len / 2, cy, r, Math.PI / 2, Math.PI * 1.5, false);
-    else path.absarc(cx, cy + len / 2, r, 0, Math.PI, false).absarc(cx, cy - len / 2, r, Math.PI, Math.PI * 2, false);
-    return path;
-  };
-  shape.holes.push(slot(L * 0.6, 0, 'x'), slot(0, L * 0.6, 'y'));
-  const m = mesh(new THREE.ExtrudeGeometry(shape, { depth: t, bevelEnabled: true, bevelThickness: 0.4, bevelSize: 0.4, bevelSegments: 1 }), mat);
-  g.add(m);
-  for (const [x, y] of [[L * 0.6, 0], [0, L * 0.6]]) {
-    const head = mesh(new THREE.CylinderGeometry(p * 0.16, p * 0.16, 2, 16), dark);
-    head.rotation.x = Math.PI / 2;
-    head.position.set(x, y, -1);
-    const nut = tNut(p);
-    nut.position.set(x, y, t + p * 0.2);
-    g.add(head, nut);
-  }
-  return g;
-}
-
 // Drop-in T-nut as it sits in a slot: small block, pressed against the slot lips.
 function tNut(p) {
   return mesh(new THREE.BoxGeometry(p * 0.32, p * 0.16, p * 0.42), chrome);
@@ -504,21 +530,53 @@ function tNut(p) {
 // across. The profiles it joins lie at local y < 0 and x < 0, so each bolt gets a
 // T-nut just inside that profile's slot.
 function gusset(L, w, holes, mat, p) {
-  // Cast inside corner gusset (T-Nutz CB-010-A / CB-010-K): two 3/16" legs bolted to the
-  // profiles, closed by a triangular cheek on each side and open along the hypotenuse, so
-  // the bolts go in through the open diagonal face.
+  // Cast inside corner gusset to the T-Nutz drawings (CB-010-A 1" x 1", CB-010-K 2" x 2"),
+  // 7/8" wide: three 3/16" walls (two legs and the diagonal) with both sides open. Each leg
+  // has Ø0.281" holes 0.5" from the corner (and 1" apart on the 4-hole part); the diagonal
+  // has a Ø0.5" access hole in line with each pair of bolts, drawn as an oval where the two
+  // counterbores overlap. Profiles lie at local y < 0 and x < 0; width along local z.
   const g = new THREE.Group();
   const t = p * 0.1875;
-  const legA = mesh(new THREE.BoxGeometry(L, t, w), mat);
-  legA.position.set(L / 2, t / 2, 0);
-  const legB = mesh(new THREE.BoxGeometry(t, L, w), mat);
-  legB.position.set(t / 2, L / 2, 0);
-  g.add(legA, legB);
-  for (const side of [-1, 1]) {
-    const cheek = mesh(new THREE.ExtrudeGeometry(new THREE.Shape().moveTo(0, 0).lineTo(L, 0).lineTo(0, L).closePath(), { depth: t, bevelEnabled: false }), mat);
-    cheek.position.z = side * (w / 2) - (side > 0 ? t : 0);
-    g.add(cheek);
+  const along = holes === 1 ? [L / 2] : Array.from({ length: holes }, (_, i) => p / 2 + i * p);
+  const plate = (len, cx, holeAt, holeShape) => {
+    const sh = new THREE.Shape().moveTo(cx - len / 2, -w / 2).lineTo(cx + len / 2, -w / 2).lineTo(cx + len / 2, w / 2).lineTo(cx - len / 2, w / 2).closePath();
+    for (const u of holeAt) sh.holes.push(holeShape(u));
+    // generous bevel: the cast part has softly rounded edges all round
+    const geo = new THREE.ExtrudeGeometry(sh, { depth: t * 0.4, bevelEnabled: true, bevelThickness: t * 0.3, bevelSize: t * 0.3, bevelSegments: 4, curveSegments: 24 });
+    geo.rotateX(-Math.PI / 2);
+    geo.translate(0, t * 0.3, 0);
+    return geo;
+  };
+  const small = (u) => circlePath(u, 0, p * 0.14);
+  // leg along x (on the face y = 0) and leg along y (on x = 0)
+  const legLen = L - t / 2; // the round tip finishes each leg
+  g.add(mesh(plate(legLen, legLen / 2, along, small), mat));
+  const legB = mesh(plate(legLen, legLen / 2, along, small), mat);
+  legB.rotation.z = Math.PI / 2;
+  legB.position.x = t;
+  g.add(legB);
+  // diagonal wall: local x along the diagonal from its middle, thickness out along (1, 1)
+  const oval = (u) => {
+    const r = p * 0.25;
+    const half = holes === 1 ? 0 : p * 0.08; // two overlapping Ø0.5" counterbores
+    return new THREE.Path().absarc(u + half, 0, r, -Math.PI / 2, Math.PI / 2, false).absarc(u - half, 0, r, Math.PI / 2, Math.PI * 1.5, false);
+  };
+  const diagLen = L * Math.SQRT2 - 2 * t;
+  const diag = mesh(plate(diagLen, 0, along.map((d) => (d - L / 2) * Math.SQRT2), oval), mat);
+  diag.rotation.z = -Math.PI / 4;
+  diag.position.set(L / 2 - t * Math.SQRT1_2, L / 2 - t * Math.SQRT1_2, 0);
+  g.add(diag);
+  // rounded tips where the diagonal meets each leg, and a fillet in the inside corner
+  for (const [x, y] of [[L - t / 2, t / 2], [t / 2, L - t / 2]]) {
+    const tip = mesh(new THREE.CylinderGeometry(t / 2, t / 2, w - 0.2, 24), mat);
+    tip.rotation.x = Math.PI / 2;
+    tip.position.set(x, y, 0);
+    g.add(tip);
   }
+  const fillet = mesh(new THREE.BoxGeometry(t * 1.1, t * 1.1, w - 0.2), mat);
+  fillet.rotation.z = Math.PI / 4;
+  fillet.position.set(t, t, 0);
+  g.add(fillet);
   const r = p * 0.16;
   const step = holes === 1 ? L / 2 : p / 2;
   for (let i = 0; i < holes; i++) {
@@ -538,40 +596,46 @@ function gusset(L, w, holes, mat, p) {
   return g;
 }
 
-// 2 Hole Inside Corner Bracket (T-Nutz CBS-010-A style): 1" x 1" legs, 7/8" wide, 3/16"
-// walls with a triangular web in the middle. Profiles lie at local y < 0 and x < 0.
+// 2 Hole Inside Corner Bracket (T-Nutz CBS-010-A): plain L, 1" x 1" legs (25.2 mm),
+// 7/8" wide (22.6 mm), 3/16" thick, a small fillet inside the bend and the free ends
+// rounded on the inside face, one Ø0.27" hole centred in each leg. Profiles lie at local
+// y < 0 and x < 0; the width runs along local z.
 function lBracket(L, w, t, mat, p) {
   const g = new THREE.Group();
-  const wall = p * 0.1875;
-  const a = mesh(new THREE.BoxGeometry(L, wall, w), mat);
-  a.position.set(L / 2, wall / 2, 0);
-  const b = mesh(new THREE.BoxGeometry(wall, L, w), mat);
-  b.position.set(wall / 2, L / 2, 0);
-  const web = mesh(new THREE.ExtrudeGeometry(new THREE.Shape().moveTo(0, 0).lineTo(L * 0.85, 0).lineTo(0, L * 0.85).closePath(), { depth: wall, bevelEnabled: false }), mat);
-  web.position.set(0, 0, -wall / 2);
-  g.add(a, b, web);
-  for (const [x, y, rz] of [[L * 0.62, wall, 0], [wall, L * 0.62, Math.PI / 2]]) {
-    for (const side of [-1, 1]) {
-      const head = mesh(new THREE.CylinderGeometry(p * 0.13, p * 0.13, 1.6, 16), dark);
-      head.rotation.z = rz;
-      head.position.set(x + (rz ? 0.8 : 0), y + (rz ? 0 : 0.8), (side * w) / 4);
-      g.add(head);
-    }
+  const th = p * 0.1875;
+  const rf = th * 0.6;
+  const side = new THREE.Shape()
+    .moveTo(0, 0)
+    .lineTo(L, 0)
+    .quadraticCurveTo(L, th, L - th, th)
+    .lineTo(th + rf, th)
+    .quadraticCurveTo(th, th, th, th + rf)
+    .lineTo(th, L - th)
+    .quadraticCurveTo(th, L, 0, L)
+    .closePath();
+  const geo = new THREE.ExtrudeGeometry(side, { depth: w, bevelEnabled: true, bevelThickness: 0.3, bevelSize: 0.3, bevelSegments: 1, curveSegments: 12 });
+  geo.translate(0, 0, -w / 2);
+  g.add(mesh(geo, mat));
+  const at = L * 0.56; // hole centre along each leg
+  for (const rz of [0, Math.PI / 2]) {
+    const head = mesh(new THREE.SphereGeometry(p * 0.19, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), dark);
+    head.rotation.z = -rz; // dome points away from the profile
+    head.position.set(rz ? th : at, rz ? at : th, 0);
     const nut = tNut(p);
     nut.rotation.z = rz;
-    nut.position.set(rz ? -p * 0.2 : x, rz ? y : -p * 0.2, 0);
-    g.add(nut);
+    nut.position.set(rz ? -p * 0.2 : at, rz ? at : -p * 0.2, 0);
+    g.add(head, nut);
   }
   return g;
 }
 
-// Joining Plate (T-Nutz JP-010-A style): 2" x 7/8" x 3/16" with two holes 1" apart. It is
+// Joining Plate (T-Nutz JP-010-A): 1" x 2" x 3/16", two Ø0.281" holes 1" apart. It is
 // bolted to the underside of a top rail (CPlot p.26-28: 12 plates, 12 bolts, 12 T-nuts):
 // the outer hole (local -x) takes a bolt up into a T-nut in the rail's bottom slot, the
 // inner hole (local +x) sticks out under the inset top and takes a wood screw up into it.
 function mountingTab(p, t, mat, gap = 0) {
   const g = new THREE.Group();
-  const plate = new THREE.Shape().moveTo(-p, -p * 0.4375).lineTo(p, -p * 0.4375).lineTo(p, p * 0.4375).lineTo(-p, p * 0.4375).closePath();
+  const plate = new THREE.Shape().moveTo(-p, -p / 2).lineTo(p, -p / 2).lineTo(p, p / 2).lineTo(-p, p / 2).closePath(); // 1" x 2"
   for (const x of [-p / 2, p / 2]) plate.holes.push(circlePath(x, 0, p * 0.14));
   const m = mesh(extrudeUp(plate, t, 0.3), mat);
   m.position.y = -t / 2;
@@ -594,35 +658,78 @@ function mountingTab(p, t, mat, gap = 0) {
   return g;
 }
 
-// Hidden Corner Connector (T-Nutz HC-010-A, inside to inside): a body that sits in the end
-// bore of one profile and a set screw that grips the slot of the other. Only the access
-// hole drilled in the side of the profile shows once fitted. Local +y is along the
-// profile, away from the joint; the access hole faces local +z.
+// Hidden Corner Connector (inside to inside, HC-010-A style): a small L that sits inside
+// the slots of both profiles at an inside corner, one arm in each slot, locked by an M5
+// grub screw in each arm. Arms ~1" long (25/26 mm), 9 mm wide, with a 4 mm lip that rides
+// under the slot opening. Origin where the two slot centre lines cross on the face; arms
+// along local +x and +y, local +z out of the slot.
 function hiddenConnector(p, mat) {
   const g = new THREE.Group();
-  const body = mesh(new THREE.BoxGeometry(p * 0.3, p * 0.9, p * 0.3), mat);
-  body.position.y = p * 0.35;
-  const hole = mesh(new THREE.CylinderGeometry(p * 0.14, p * 0.14, 1, 16), dark);
-  hole.rotation.x = Math.PI / 2;
-  hole.position.set(0, p * 0.5, p / 2 + 0.3);
-  g.add(body, hole);
+  const L = p;
+  const w = p * 0.35;
+  const body = p * 0.18; // part in the slot cavity
+  const lip = p * 0.12; // narrower ridge up into the slot opening
+  for (const along of ['x', 'y']) {
+    const len = along === 'x' ? L : L * 0.96;
+    const base = mesh(new THREE.BoxGeometry(along === 'x' ? len : w, along === 'x' ? w : len, body), mat);
+    base.position.set(along === 'x' ? len / 2 : 0, along === 'x' ? 0 : len / 2, -lip - body / 2);
+    const ridge = mesh(new THREE.BoxGeometry(along === 'x' ? len : w * 0.6, along === 'x' ? w * 0.6 : len, lip), mat);
+    ridge.position.set(along === 'x' ? len / 2 : 0, along === 'x' ? 0 : len / 2, -lip / 2);
+    const screw = mesh(new THREE.CylinderGeometry(p * 0.1, p * 0.1, 0.6, 16), dark);
+    screw.rotation.x = Math.PI / 2;
+    screw.position.set(along === 'x' ? len * 0.65 : 0, along === 'x' ? 0 : len * 0.65, 0.05);
+    g.add(base, ridge, screw);
+  }
   return g;
 }
 
-// Swivel levelling mount as in CPlot's photos: small chrome domed pad, narrower than the
-// leg, on a short threaded stem with a lock nut.
+// 3 Hole Joining Plate: straight plate, holes one profile apart, screwed up into the bottom
+// slots across a joint. Centre hole at the origin, holes along local x.
+function joiningPlate3(p, t, mat, { bolts = [-p, 0, p], gap = 0 } = {}) {
+  const g = new THREE.Group();
+  const w = p * 0.4375; // 3" x 7/8" x 3/16" (T-Nutz 3 hole plate drawing)
+  const plate = new THREE.Shape().moveTo(-1.5 * p, -w).lineTo(1.5 * p, -w).lineTo(1.5 * p, w).lineTo(-1.5 * p, w).closePath();
+  for (const x of [-p, 0, p]) plate.holes.push(circlePath(x, 0, p * 0.14));
+  const m = mesh(extrudeUp(plate, t, 0.3), mat);
+  m.position.y = -t / 2;
+  g.add(m);
+  for (const x of [-p, 0, p]) {
+    const head = mesh(new THREE.SphereGeometry(p * 0.2, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), dark);
+    head.rotation.x = Math.PI; // under the plate
+    head.position.set(x, -t / 2, 0);
+    g.add(head);
+    if (bolts.includes(x)) {
+      const nut = tNut(p);
+      nut.position.set(x, t / 2 + p * 0.2, 0);
+      g.add(nut);
+    } else if (gap > 0) {
+      // wood screw bridging the gap up to the top panel
+      const shank = mesh(new THREE.CylinderGeometry(p * 0.07, p * 0.07, gap, 12), chrome);
+      shank.position.set(x, t / 2 + gap / 2, 0);
+      g.add(shank);
+    }
+  }
+  return g;
+}
+
+// Antislip levelling mount for 1" rail (McMaster 47065T341), scaled to the profile p:
+// Ø1" round base with a notched rubber pad, a hex on top of the base, a 1/4"-20 stud with
+// an adjusting nut and a lock nut tight against the leg end. Leg end at y = p.
 function levellingFoot(p) {
   const g = new THREE.Group();
-  const pad = mesh(new THREE.CylinderGeometry(p * 0.36, p * 0.42, p * 0.1, 32), dark);
-  pad.position.y = p * 0.05;
-  const dome = mesh(new THREE.SphereGeometry(p * 0.4, 32, 12, 0, Math.PI * 2, 0, Math.PI / 2), chrome);
-  dome.scale.y = 0.55;
-  dome.position.y = p * 0.1;
-  const stem = mesh(new THREE.CylinderGeometry(p * 0.12, p * 0.12, p * 0.35, 16), chrome);
-  stem.position.y = p * 0.45;
-  const nut = mesh(new THREE.CylinderGeometry(p * 0.22, p * 0.22, p * 0.1, 6), chrome);
-  nut.position.y = p * 0.5;
-  g.add(pad, dome, stem, nut);
+  const add = (geo, mat, y) => { const m = mesh(geo, mat); m.position.y = y; g.add(m); return m; };
+  const rubber = new THREE.MeshStandardMaterial({ color: 0x2b2d30, roughness: 0.9 });
+  add(new THREE.CylinderGeometry(p * 0.47, p * 0.47, p * 0.1, 32), rubber, p * 0.05); // pad
+  for (const r of [0, Math.PI / 2]) {
+    const notch = add(new THREE.BoxGeometry(p * 0.96, p * 0.05, p * 0.12), new THREE.MeshBasicMaterial({ color: 0x111111 }), p * 0.02);
+    notch.rotation.y = r;
+  }
+  add(new THREE.CylinderGeometry(p * 0.5, p * 0.5, p * 0.2, 32), chrome, p * 0.2); // base
+  add(new THREE.CylinderGeometry(p * 0.36, p * 0.5, p * 0.1, 32), chrome, p * 0.35); // chamfer
+  add(new THREE.CylinderGeometry(p * 0.29, p * 0.29, p * 0.12, 6), chrome, p * 0.46); // base hex
+  add(new THREE.CylinderGeometry(p * 0.125, p * 0.125, p * 0.5, 16), chrome, p * 0.75); // 1/4"-20 stud
+  add(new THREE.CylinderGeometry(p * 0.25, p * 0.25, p * 0.1, 6), chrome, p * 0.76); // adjusting nut
+  add(new THREE.CylinderGeometry(p * 0.25, p * 0.25, p * 0.1, 6), chrome, p * 0.95); // lock nut
   return g;
 }
 
@@ -674,8 +781,10 @@ function buildDesk(design) {
   if (midRail) {
     // optional centre rail between the long rails, joined level with hidden connectors
     barY(D - 2 * p, W / 2, p, railZ, `Centre rail ${name} × ${D - 2 * p} mm`);
-    for (const [y, sy] of [[p, 1], [D - p, -1]])
-      add(orient(hiddenConnector(p, frame), [-sy, 0, 0], [0, sy, 0], at(W / 2, y, railZ + p / 2)), `Hidden Corner Connector ${name}`, 0);
+    // a hidden corner connector in each end grips the long rail slot; nothing shows below
+    // in the bottom slots: one arm along the long rail, one along the centre rail
+    for (const [y, sy] of [[p / 2, 1], [D - p / 2, -1]])
+      add(orient(hiddenConnector(p, frame), [sy, 0, 0], [0, sy, 0], at(W / 2, y, railZ)), `Hidden Corner Connector ${name}`, 0);
   }
 
   // 2. long top rails (between the legs) with a 4-hole gusset under each end
@@ -696,8 +805,9 @@ function buildDesk(design) {
       for (const [y, sy] of [[p, 1], [D - p, -1]])
       {
         add(orient(lBracket(p, p * 0.875, 2.5, frame, p), [0, sy, 0], [0, 0, -1], at(x, y, stretcherZ)), `2 Hole Inside Corner Bracket ${name}`, 2);
-        // hidden corner connector in the stretcher end, set screw into the leg slot
-        add(orient(hiddenConnector(p, frame), [-sy, 0, 0], [0, sy, 0], at(x, y, stretcherZ + p / 2)), `Hidden Corner Connector ${name}`, 0);
+        // hidden corner connector in the inner face slots: one arm up the leg, one along the stretcher
+        const sxIn = x < W / 2 ? 1 : -1;
+        add(orient(hiddenConnector(p, frame), [0, 0, sxIn * sy], [0, sy, 0], at(x + (sxIn * p) / 2, y - (sy * p) / 2, stretcherZ + p / 2)), `Hidden Corner Connector ${name}`, 0);
       }
     }
     // 5. back stretcher between the back legs
@@ -705,17 +815,13 @@ function buildDesk(design) {
     barX(W - 2 * p, p, D - p / 2, stretcherZ, `Back stretcher ${name} × ${W - 2 * p} mm`);
     for (const [x, sx] of [[p, 1], [W - p, -1]]) {
       add(orient(lBracket(p, p * 0.875, 2.5, frame, p), [sx, 0, 0], [0, 0, -1], at(x, D - p / 2, stretcherZ)), `2 Hole Inside Corner Bracket ${name}`, 2);
-      add(orient(hiddenConnector(p, frame), [0, sx, 0], [sx, 0, 0], at(x, D - p / 2, stretcherZ + p / 2)), `Hidden Corner Connector ${name}`, 0);
+      add(orient(hiddenConnector(p, frame), [0, 0, sx], [sx, 0, 0], at(x - (sx * p) / 2, D - p, stretcherZ + p / 2)), `Hidden Corner Connector ${name}`, 0);
     }
-    // 6. a flat 2-slot corner plate under each back corner, bolted up into the bottom
-    //    slots of the end stretcher and the back stretcher (CPlot cover drawing)
+    // 6. a 4 hole inside corner gusset lying flat in the inside of each back corner, its
+    //    legs bolted into the inner side slots of the end and back stretchers (CPlot p.21-23)
     tag = 'backGussets';
-    for (const [x, , sx] of legs.filter(([, , , sy]) => sy < 0)) {
-      // basis chosen so the plate's thickness grows upward, against the stretchers
-      const [a, b] = sx > 0 ? [[1, 0, 0], [0, -1, 0]] : [[0, -1, 0], [-1, 0, 0]];
-      const t = p * 0.1875;
-      add(orient(cornerPlate(p * 2.2, p, frame), a, b, at(x, D - p / 2, stretcherZ - t)), `2 Hole Inside Corner Gusset ${name}`, 2);
-    }
+    for (const [x, , sx] of legs.filter(([, , , sy]) => sy < 0))
+      add(orient(gusset(p * 2, p * 0.875, 2, frame, p), [sx, 0, 0], [0, -1, 0], at(x + (sx * p) / 2, D - p, stretcherZ + p / 2)), `4 Hole Inside Corner Gusset ${name}`, 4);
   }
 
   // 7. feet
@@ -736,10 +842,13 @@ function buildDesk(design) {
     for (const x of along(parts.tabsLong, W - 2 * p, p)) tab(x, y, -sy * Math.PI / 2, 0, sy);
   for (const [x, sx] of [[p / 2, 1], [W - p / 2, -1]])
     for (const y of along(parts.tabsShort, D - 2 * p, p)) tab(x, y, sx > 0 ? 0 : Math.PI, sx, 0);
-  // the centre rail carries the inner edge of both top panels
+  // a 3 hole plate across the centre rail carries the inner edge of both top panels:
+  // middle hole bolted into the rail, outer holes screwed up into each panel
   if (midRail)
-    for (const sx of [1, -1])
-      for (const y of along(parts.tabsShort, D - 2 * p, p)) tab(W / 2, y, sx > 0 ? 0 : Math.PI, sx, 0);
+    for (const y of along(parts.centreSupports, D - 2 * p, p)) {
+      const pl = add(joiningPlate3(p, TAB_T, frame, { bolts: [0], gap: design.topGap }), `3 Hole Joining Plate ${name}`, 1);
+      pl.position.copy(at(W / 2, y, tabZ));
+    }
 
   // 9. top (can be hidden in the viewer to look at the frame; always drawn in the PDF)
   tag = 'top';

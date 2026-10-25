@@ -269,14 +269,15 @@ function deskHardware(doc, design, shots, { M, getY, setY, heading }) {
   const name = `${size}${size}`;
   const items = [
     [shots.profile, `${name} T-slot profile`, `${(parts.profileTotal / 1000).toFixed(2)} m, cut list above`],
-    [shots.largeGusset, '4 Hole Inside Corner Gusset', `${parts.largeGussets}x  long top rails to legs`],
-    [shots.smallGusset, '2 Hole Inside Corner Gusset', `${parts.smallGussets}x  short top rails, back corners`],
+    [shots.largeGusset, '4 Hole Inside Corner Gusset', `${parts.largeGussets}x  long top rails to legs${parts.backGussets ? ', back low corners' : ''}`],
+    [shots.smallGusset, '2 Hole Inside Corner Gusset', `${parts.smallGussets}x  short top rails to legs`],
     ...(parts.lBrackets ? [[shots.lBracket, '2 Hole Inside Corner Bracket', `${parts.lBrackets}x  low stretchers`]] : []),
     [shots.tNut, 'Drop-in T-nut', `${parts.fasteners}x  ${prof.nut}`],
     [shots.bolt, 'Button head bolt', `${parts.fasteners}x  ${prof.bolt}`],
     [shots.foot, 'Levelling foot', `${parts.feet}x  ${prof.footThread} thread`],
-    [null, 'Hidden Corner Connector', `${parts.hiddenConnectors}x  inside the slots, set-screws (not visible)`],
-    [shots.tab, 'Joining plate', `${parts.tabs}x  on the rails, under the top`],
+    [shots.hiddenConnector, 'Hidden Corner Connector', `${parts.hiddenConnectors}x  L in the slots at the joint, M5 grub screws`],
+    ...(parts.threeHolePlates ? [[shots.joiningPlate3, '3 Hole Joining Plate', `${parts.threeHolePlates}x  across the centre rail`]] : []),
+    [shots.tab, 'Joining plate', `${parts.tabs}x  under the rails, carrying the top`],
   ];
   setY(getY() + 2);
   heading('Hardware');
