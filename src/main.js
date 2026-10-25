@@ -22,12 +22,12 @@ const TABS = {
   desk: {
     form: $('deskConfig'),
     defaults: DESK_DEFAULTS,
-    strings: ['profile', 'stretchers', 'topFinish', 'topColor', 'frameColor', 'showTop'],
+    strings: ['profile', 'centreRail', 'stretchers', 'topFinish', 'topColor', 'frameColor', 'showTop'],
     compute: computeDesk,
     rows: deskRows,
     steps: deskSteps,
     summary: (d) =>
-      `${d.size}${d.size} profile · legs ${d.legLength} mm · ${d.withStretchers ? `stretchers at ${d.stretcherZ} mm` : 'no stretchers'}${d.midRail ? ' · centre rail' : ''}`,
+      `${d.size}${d.size} profile · legs ${d.legLength} mm · ${d.withStretchers ? `stretchers at ${d.stretcherZ} mm` : 'no stretchers'}${d.midRail ? ' · centre rail' : ''} · sag ${d.check.topSag.toFixed(1)} mm top, ${d.check.railSag.toFixed(1)} mm rails under ${d.check.load} kg`,
     total: (d) => `${(d.parts.profileTotal / 1000).toFixed(2)} m of ${d.size}${d.size} profile in total`,
   },
 };
@@ -142,10 +142,38 @@ export function cutMyText(o) {
 }
 
 for (const t of Object.values(TABS)) t.form.addEventListener('input', render);
+
+// Two-option selects show as switches: off is the first option, on the second. The select
+// stays in the form (hidden) so saving, reset and compute read it as before.
+const switches = [];
+for (const sel of document.querySelectorAll('form select')) {
+  if (sel.options.length !== 2 || sel.name === 'thickness') continue; // thickness options change with material
+  const sw = document.createElement('button');
+  sw.type = 'button';
+  sw.className = 'switch';
+  sw.setAttribute('role', 'switch');
+  sw.innerHTML = '<span class="state"></span><span class="track"></span>';
+  sel.hidden = true;
+  sel.after(sw);
+  const sync = () => {
+    sw.setAttribute('aria-checked', String(sel.selectedIndex === 1));
+    sw.querySelector('.state').textContent = sel.options[sel.selectedIndex]?.text ?? '';
+  };
+  sw.addEventListener('click', () => {
+    sel.selectedIndex = sel.selectedIndex === 1 ? 0 : 1;
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+    sel.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  sel.form.addEventListener('input', sync);
+  switches.push(sync);
+  sync();
+}
+const syncSwitches = () => switches.forEach((s) => s());
 document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));
 $('reset').addEventListener('click', () => {
   try { localStorage.removeItem(storeKey(tab)); } catch { /* ignore */ }
   fill(TABS[tab].form, TABS[tab].defaults);
+  syncSwitches();
   render();
 });
 $('copycutmy').addEventListener('click', async (e) => {

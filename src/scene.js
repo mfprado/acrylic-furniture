@@ -365,7 +365,7 @@ export function renderParts(design) {
 
   if (design.kind === 'desk') {
     const { p, input } = design;
-    const frame = new THREE.MeshPhysicalMaterial({ color: input.frameColor ?? '#c4c8cc', metalness: 0.8, roughness: 0.42 });
+    const frame = new THREE.MeshPhysicalMaterial({ color: input.frameColor ?? '#949494', metalness: 0.8, roughness: 0.42 });
     const bar = profileBar(p, p * 4, frame);
     const nut = tNut(p);
     nut.scale.setScalar(3);
@@ -504,16 +504,21 @@ function tNut(p) {
 // across. The profiles it joins lie at local y < 0 and x < 0, so each bolt gets a
 // T-nut just inside that profile's slot.
 function gusset(L, w, holes, mat, p) {
-  // Cast inside corner gusset (T-Nutz CB-010 style): a hollow triangle, wall 3/16" on a
-  // 1" profile, open on both sides so the bolt heads show through.
+  // Cast inside corner gusset (T-Nutz CB-010-A / CB-010-K): two 3/16" legs bolted to the
+  // profiles, closed by a triangular cheek on each side and open along the hypotenuse, so
+  // the bolts go in through the open diagonal face.
   const g = new THREE.Group();
   const t = p * 0.1875;
-  const tri = new THREE.Shape().moveTo(0, 0).lineTo(L, 0).lineTo(0, L).closePath();
-  const k = t * (1 + Math.SQRT2);
-  tri.holes.push(new THREE.Path().moveTo(t, t).lineTo(t, L - k).lineTo(L - k, t).closePath());
-  const geo = new THREE.ExtrudeGeometry(tri, { depth: w, bevelEnabled: true, bevelThickness: 0.5, bevelSize: 0.5, bevelSegments: 1 });
-  geo.translate(0, 0, -w / 2);
-  g.add(mesh(geo, mat));
+  const legA = mesh(new THREE.BoxGeometry(L, t, w), mat);
+  legA.position.set(L / 2, t / 2, 0);
+  const legB = mesh(new THREE.BoxGeometry(t, L, w), mat);
+  legB.position.set(t / 2, L / 2, 0);
+  g.add(legA, legB);
+  for (const side of [-1, 1]) {
+    const cheek = mesh(new THREE.ExtrudeGeometry(new THREE.Shape().moveTo(0, 0).lineTo(L, 0).lineTo(0, L).closePath(), { depth: t, bevelEnabled: false }), mat);
+    cheek.position.z = side * (w / 2) - (side > 0 ? t : 0);
+    g.add(cheek);
+  }
   const r = p * 0.16;
   const step = holes === 1 ? L / 2 : p / 2;
   for (let i = 0; i < holes; i++) {
@@ -560,9 +565,11 @@ function lBracket(L, w, t, mat, p) {
   return g;
 }
 
-// Joining Plate (T-Nutz JP-010-A style): 2" x 7/8" x 3/16" with two holes 1" apart, each
-// with a button head screw into a T-nut in the rail below.
-function mountingTab(p, t, mat) {
+// Joining Plate (T-Nutz JP-010-A style): 2" x 7/8" x 3/16" with two holes 1" apart. It is
+// bolted to the underside of a top rail (CPlot p.26-28: 12 plates, 12 bolts, 12 T-nuts):
+// the outer hole (local -x) takes a bolt up into a T-nut in the rail's bottom slot, the
+// inner hole (local +x) sticks out under the inset top and takes a wood screw up into it.
+function mountingTab(p, t, mat, gap = 0) {
   const g = new THREE.Group();
   const plate = new THREE.Shape().moveTo(-p, -p * 0.4375).lineTo(p, -p * 0.4375).lineTo(p, p * 0.4375).lineTo(-p, p * 0.4375).closePath();
   for (const x of [-p / 2, p / 2]) plate.holes.push(circlePath(x, 0, p * 0.14));
@@ -571,11 +578,34 @@ function mountingTab(p, t, mat) {
   g.add(m);
   for (const x of [-p / 2, p / 2]) {
     const head = mesh(new THREE.SphereGeometry(p * 0.2, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), dark);
-    head.position.set(x, t / 2, 0);
-    const nut = tNut(p);
-    nut.position.set(x, -t / 2 - p * 0.2, 0);
-    g.add(head, nut);
+    head.rotation.x = Math.PI; // dome hangs below the plate
+    head.position.set(x, -t / 2, 0);
+    g.add(head);
   }
+  const nut = tNut(p);
+  nut.position.set(-p / 2, t / 2 + p * 0.2, 0);
+  g.add(nut);
+  // wood screw shank bridging the gap that lifts the top flush with the rails
+  if (gap > 0) {
+    const shank = mesh(new THREE.CylinderGeometry(p * 0.07, p * 0.07, gap, 12), chrome);
+    shank.position.set(p / 2, t / 2 + gap / 2, 0);
+    g.add(shank);
+  }
+  return g;
+}
+
+// Hidden Corner Connector (T-Nutz HC-010-A, inside to inside): a body that sits in the end
+// bore of one profile and a set screw that grips the slot of the other. Only the access
+// hole drilled in the side of the profile shows once fitted. Local +y is along the
+// profile, away from the joint; the access hole faces local +z.
+function hiddenConnector(p, mat) {
+  const g = new THREE.Group();
+  const body = mesh(new THREE.BoxGeometry(p * 0.3, p * 0.9, p * 0.3), mat);
+  body.position.y = p * 0.35;
+  const hole = mesh(new THREE.CylinderGeometry(p * 0.14, p * 0.14, 1, 16), dark);
+  hole.rotation.x = Math.PI / 2;
+  hole.position.set(0, p * 0.5, p / 2 + 0.3);
+  g.add(body, hole);
   return g;
 }
 
@@ -600,7 +630,7 @@ function buildDesk(design) {
   const g = new THREE.Group();
   const { input, p, size, prof, railZ, legLength, stretcherZ, withStretchers, midRail, footHeight: fh, parts } = design;
   const { width: W, depth: D, topThickness: tt } = input;
-  const frame = new THREE.MeshPhysicalMaterial({ color: input.frameColor ?? '#c4c8cc', metalness: 0.8, roughness: 0.42 });
+  const frame = new THREE.MeshPhysicalMaterial({ color: input.frameColor ?? '#949494', metalness: 0.8, roughness: 0.42 });
   const X = (x) => x - W / 2;
   const Z = (y) => y - D / 2;
   const at = (x, y, z) => new THREE.Vector3(X(x), z, Z(y));
@@ -641,7 +671,12 @@ function buildDesk(design) {
   };
   shortRail(p / 2);
   shortRail(W - p / 2);
-  if (midRail) shortRail(W / 2);
+  if (midRail) {
+    // optional centre rail between the long rails, joined level with hidden connectors
+    barY(D - 2 * p, W / 2, p, railZ, `Centre rail ${name} × ${D - 2 * p} mm`);
+    for (const [y, sy] of [[p, 1], [D - p, -1]])
+      add(orient(hiddenConnector(p, frame), [-sy, 0, 0], [0, sy, 0], at(W / 2, y, railZ + p / 2)), `Hidden Corner Connector ${name}`, 0);
+  }
 
   // 2. long top rails (between the legs) with a 4-hole gusset under each end
   tag = 'longRails';
@@ -654,18 +689,23 @@ function buildDesk(design) {
   for (const [x, y] of legs) barZ(legLength, x, y, fh, `Leg ${name} × ${legLength} mm`);
 
   if (withStretchers) {
-    // 4. end stretchers with an L bracket on top of each end, against the leg faces
+    // 4. end stretchers: hidden corner connector in each end plus an L bracket under it
     tag = 'endStretchers';
     for (const x of [p / 2, W - p / 2]) {
       barY(D - 2 * p, x, p, stretcherZ, `End stretcher ${name} × ${D - 2 * p} mm`);
       for (const [y, sy] of [[p, 1], [D - p, -1]])
+      {
         add(orient(lBracket(p, p * 0.875, 2.5, frame, p), [0, sy, 0], [0, 0, -1], at(x, y, stretcherZ)), `2 Hole Inside Corner Bracket ${name}`, 2);
+        // hidden corner connector in the stretcher end, set screw into the leg slot
+        add(orient(hiddenConnector(p, frame), [-sy, 0, 0], [0, sy, 0], at(x, y, stretcherZ + p / 2)), `Hidden Corner Connector ${name}`, 0);
+      }
     }
     // 5. back stretcher between the back legs
     tag = 'backStretcher';
     barX(W - 2 * p, p, D - p / 2, stretcherZ, `Back stretcher ${name} × ${W - 2 * p} mm`);
     for (const [x, sx] of [[p, 1], [W - p, -1]]) {
       add(orient(lBracket(p, p * 0.875, 2.5, frame, p), [sx, 0, 0], [0, 0, -1], at(x, D - p / 2, stretcherZ)), `2 Hole Inside Corner Bracket ${name}`, 2);
+      add(orient(hiddenConnector(p, frame), [0, sx, 0], [sx, 0, 0], at(x, D - p / 2, stretcherZ + p / 2)), `Hidden Corner Connector ${name}`, 0);
     }
     // 6. a flat 2-slot corner plate under each back corner, bolted up into the bottom
     //    slots of the end stretcher and the back stretcher (CPlot cover drawing)
@@ -682,30 +722,41 @@ function buildDesk(design) {
   tag = 'feet';
   for (const [x, y] of legs) add(levellingFoot(p), `Levelling foot ${prof.footThread}`).position.copy(at(x, y, 0));
 
-  // 8. mounting tabs on the top face of the rails
+  // 8. joining plates under the top rails, sticking out inward to carry the inset top
   tag = 'tabs';
-  const tabZ = railZ + p;
+  const tabZ = railZ - TAB_T / 2; // under the rails
   const along = (n, len, off) => Array.from({ length: n }, (_, i) => off + ((i + 1) * len) / (n + 1));
-  for (const y of [p / 2, D - p / 2])
-    for (const x of along(parts.tabsLong, W - 2 * p, p)) add(mountingTab(p, TAB_T, frame), 'Joining plate', 2).position.copy(at(x, y, tabZ + TAB_T / 2));
-  for (const x of [p / 2, W - p / 2])
-    for (const y of along(parts.tabsShort, D - 2 * p, p)) {
-      const t = add(mountingTab(p, TAB_T, frame), 'Joining plate', 2);
-      t.position.copy(at(x, y, tabZ + TAB_T / 2));
-      t.rotation.y = Math.PI / 2;
-    }
+  // rotation.y turns the plate's local +x (inner hole) to point into the frame
+  const tab = (x, y, rot, ix, iy) => {
+    const t = add(mountingTab(p, TAB_T, frame, design.topGap), 'Joining plate', 1);
+    t.position.copy(at(x + (ix * p) / 2, y + (iy * p) / 2, tabZ));
+    t.rotation.y = rot;
+  };
+  for (const [y, sy] of [[p / 2, 1], [D - p / 2, -1]])
+    for (const x of along(parts.tabsLong, W - 2 * p, p)) tab(x, y, -sy * Math.PI / 2, 0, sy);
+  for (const [x, sx] of [[p / 2, 1], [W - p / 2, -1]])
+    for (const y of along(parts.tabsShort, D - 2 * p, p)) tab(x, y, sx > 0 ? 0 : Math.PI, sx, 0);
+  // the centre rail carries the inner edge of both top panels
+  if (midRail)
+    for (const sx of [1, -1])
+      for (const y of along(parts.tabsShort, D - 2 * p, p)) tab(W / 2, y, sx > 0 ? 0 : Math.PI, sx, 0);
 
   // 9. top (can be hidden in the viewer to look at the frame; always drawn in the PDF)
   tag = 'top';
   if (input.showTop === 'no') return g;
-  const topZ = railZ + p + TAB_T;
+  // the top drops in between the rails, flush with them, held up on the plate screws
+  const topZ = railZ + p - tt;
+  const [tw, td] = [parts.top.width, parts.top.depth];
+  const centres = midRail ? [-(tw + p) / 2, (tw + p) / 2] : [0];
   const wood = new THREE.MeshStandardMaterial({ color: 0xd8c3a0, roughness: 0.8 });
   const lino = input.topFinish === 'linoleum';
-  const ply = add(mesh(new THREE.BoxGeometry(W, lino ? tt - 2 : tt, D), wood), `Plywood top ${W} × ${D} mm`);
-  ply.position.set(0, topZ + (lino ? (tt - 2) / 2 : tt / 2), 0);
-  if (lino) {
-    const sheetL = add(mesh(new THREE.BoxGeometry(W, 2, D), new THREE.MeshStandardMaterial({ color: input.topColor ?? '#c9b8a3', roughness: 0.9 })), 'Linoleum');
-    sheetL.position.set(0, topZ + tt - 1, 0);
+  for (const cx of centres) {
+    const ply = add(mesh(new THREE.BoxGeometry(tw, lino ? tt - 2 : tt, td), wood), `Plywood top ${tw} × ${td} mm`);
+    ply.position.set(cx, topZ + (lino ? (tt - 2) / 2 : tt / 2), 0);
+    if (lino) {
+      const sheetL = add(mesh(new THREE.BoxGeometry(tw, 2, td), new THREE.MeshStandardMaterial({ color: input.topColor ?? '#c9b8a3', roughness: 0.9 })), 'Linoleum');
+      sheetL.position.set(cx, topZ + tt - 1, 0);
+    }
   }
   return g;
 }

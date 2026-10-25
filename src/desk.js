@@ -6,13 +6,15 @@
 export const DESK_DEFAULTS = {
   width: 1220,
   depth: 610,
-  height: 740, // floor to top surface
+  height: 740, // floor to the top of the frame
   profile: 'auto', // 'auto' or 20 / 30 / 40
-  topThickness: 18, // plywood
+  topThickness: 19, // 3/4 in plywood (with linoleum), flush between the top rails
   topFinish: 'linoleum', // 'linoleum' or 'plain'
   topColor: '#c9b8a3',
   stretchers: 'yes', // low side + back stretchers
-  frameColor: '#c4c8cc',
+  frameColor: '#949494',
+  centreRail: 'no', // optional rail across the middle; splits the top into two panels
+  loadKg: 50, // spread over the top: monitors, arms, things
   showTop: 'yes', // 3D view only: hide the top to see the frame and joining plates
 };
 
@@ -24,9 +26,14 @@ export const PROFILES = {
 };
 
 const FOOT_HEIGHT = 15; // levelling foot, screwed most of the way in
-export const TAB_THICKNESS = 5; // joining plates (3/16") sit between the rails and the top
+export const TAB_THICKNESS = 5; // joining plates (3/16") under the rails carry the inset top
 const TAB_SPACING = 300; // joining plates on top of the rails, roughly every 300 mm
-const MID_RAIL_OVER = 1400; // add a centre top rail on wider desks
+const SHEET_MAX = 2440; // longest standard plywood sheet (8 ft)
+const SAG_LIMIT = 300; // span / 300, usual stiffness limit for a desk top
+// Second moment of area (mm^4) of typical metric T-slot profiles; check your supplier's sheet.
+const PROFILE_I = { 20: 0.7e4, 30: 2.7e4, 40: 9.0e4 };
+const E_ALU = 69000; // MPa
+const E_PLY = 7000; // MPa, birch/poplar plywood, bending along the face grain (conservative)
 
 // Same idea as the shelf rod rule: thin for small pieces, heavier as the frame grows.
 // CPlot's 1220 x 740 desk uses 1" (25.4 mm) profile, which sits between 2020 and 3030.
@@ -45,17 +52,26 @@ export function computeDesk(input) {
   const prof = PROFILES[size];
   const p = prof.p;
 
-  const railZ = H - tt - TAB_THICKNESS - p; // underside of the top rails
+  const railZ = H - p; // underside of the top rails
+  // CPlot's top is inset: cut to fit between the rails, resting on the joining plates
+  // bolted under them, so it sits flush with (or below) the top of the frame.
+  const midRail = q.centreRail === 'yes';
+  // a centre rail splits the opening, so the top becomes two panels
+  const topW = midRail ? Math.round((W - 3 * p) / 2) : W - 2 * p;
+  const topD = D - 2 * p;
+  // Gap between the plates and the underside of the top, held by the wood screws so the
+  // top surface comes out flush with the rails.
+  const topGap = p - tt;
   // Legs run up to the top of the frame; the rails fit between them (CPlot cover drawing).
   const legLength = Math.round(railZ + p - FOOT_HEIGHT);
   const stretcherZ = Math.round(FOOT_HEIGHT + legLength * 0.25); // underside of low stretchers
   const withStretchers = q.stretchers !== 'no';
-  const midRail = W > MID_RAIL_OVER;
 
   const cuts = [
     { role: 'Leg', length: legLength, qty: 4 },
     { role: 'Top rail, long (front and back)', length: W - 2 * p, qty: 2 },
-    { role: 'Top rail, short (ends)', length: D - 2 * p, qty: 2 + (midRail ? 1 : 0) },
+    { role: 'Top rail, short (ends)', length: D - 2 * p, qty: 2 },
+    ...(midRail ? [{ role: 'Centre rail (between the long rails)', length: D - 2 * p, qty: 1 }] : []),
   ];
   if (withStretchers) {
     cuts.push({ role: 'Low stretcher, ends', length: D - 2 * p, qty: 2 });
@@ -68,21 +84,50 @@ export function computeDesk(input) {
   //    plus 2 flat under the back stretcher corners, bolted up into both stretchers
   //  - 2 Hole Inside Corner Bracket (CBS-010-A): 8 in the BOM; CPlot's photos show them
   //    under the stretcher ends (6 joints). The other 2 are listed but not placed.
-  //  - Hidden Corner Connector (HC-010-A): 6, inside the slots, not visible once fitted
-  //  - Joining Plate (JP-010-A): 12 on top of the rails, each with 2 screws + 2 T-nuts
+  //  - Hidden Corner Connector (HC-010-A, inside to inside): 6, in the ends of the end and
+  //    back stretchers, gripping the leg slots (CPlot p.12-19), plus 2 for an optional centre
+  //    rail between the long rails. Only the access hole shows.
+  //  - Joining Plate (JP-010-A): 12 across the top of the rails, one bolt + T-nut into the
+  //    rail and one wood screw up into the top through the overhanging hole (CPlot p.26-28)
   const largeGussets = 4;
-  const smallGussets = 4 + (midRail ? 2 : 0) + (withStretchers ? 2 : 0);
+  const smallGussets = 4 + (withStretchers ? 2 : 0);
   const lBrackets = withStretchers ? 8 : 0;
-  const hiddenConnectors = withStretchers ? 6 : 4;
+  const hiddenConnectors = (withStretchers ? 6 : 0) + (midRail ? 2 : 0);
   const tabsLong = Math.max(2, Math.round(W / TAB_SPACING));
   const tabsShort = Math.max(1, Math.round(D / TAB_SPACING));
-  const tabs = 2 * tabsLong + 2 * tabsShort;
-  const fasteners = largeGussets * 4 + smallGussets * 2 + lBrackets * 2 + tabs * 2;
+  const tabs = 2 * tabsLong + 2 * tabsShort + (midRail ? 2 * tabsShort : 0);
+  const fasteners = largeGussets * 4 + smallGussets * 2 + lBrackets * 2 + tabs;
 
   const warnings = [];
   if (size < recommended)
     warnings.push(`${size}${size} profile is lighter than the ${recommended}${recommended} suggested for this size; expect more wobble.`);
-  if (midRail) warnings.push(`Added a centre top rail because the desk is wider than ${MID_RAIL_OVER} mm.`);
+  // No centre rail: the top is screwed to every rail through the joining plates, so it
+  // ties the long rails together and shares the load. Two simple checks, both taken as
+  // simply supported uniform loads (conservative: ignores the plate edge fixity and the
+  // rail + top acting together):
+  //  - plywood spanning front to back between the long rails, over the full width
+  //  - each long rail carrying half the load over its length
+  const load = Math.max(0, Number(q.loadKg) || 0) * 9.81; // N
+  const sag = (P, L, EI) => (5 * P * L ** 3) / (384 * EI);
+  const plyI = (topW * tt ** 3) / 12;
+  const topSag = sag(load / (midRail ? 2 : 1), topD, E_PLY * plyI); // load shared by the panels
+  // the centre rail hands its share to the long rails at mid span, so it does not help them
+  const railSag = sag(load / 2, W - 2 * p, E_ALU * PROFILE_I[size]);
+  const check = {
+    load: q.loadKg,
+    topSag,
+    topLimit: topD / SAG_LIMIT,
+    railSag,
+    railLimit: (W - 2 * p) / SAG_LIMIT,
+  };
+  if (topSag > check.topLimit)
+    warnings.push(`The ${tt} mm top sags about ${topSag.toFixed(1)} mm front to back under ${q.loadKg} kg (limit ${check.topLimit.toFixed(1)} mm). Use thicker plywood or a shallower desk.`);
+  if (railSag > check.railLimit) {
+    const better = [20, 30, 40].find((s) => sag(load / 2, W - 2 * s, E_ALU * PROFILE_I[s]) <= (W - 2 * s) / SAG_LIMIT);
+    warnings.push(`The long rails sag about ${railSag.toFixed(1)} mm in the middle under ${q.loadKg} kg (limit ${check.railLimit.toFixed(1)} mm).${better && better > size ? ` Use ${better}${better} profile.` : ' Use a heavier profile or a narrower desk.'}`);
+  }
+  if (topW > SHEET_MAX) warnings.push(`The top (${topW} mm) is longer than a ${SHEET_MAX} mm plywood sheet; it would need a joint with nothing under it. Add a centre rail to split it into two panels.`);
+  if (tt > p) warnings.push(`A ${tt} mm top is thicker than the ${size}${size} profile, so it stands ${tt - p} mm proud of the rails instead of flush.`);
   if (H < 600) warnings.push('Under 600 mm is coffee-table height, not a desk.');
   if (withStretchers && stretcherZ < 80) warnings.push('Low stretchers end up very close to the floor.');
 
@@ -94,9 +139,11 @@ export function computeDesk(input) {
     prof,
     p,
     railZ,
+    topGap,
     legLength,
     stretcherZ,
     withStretchers,
+    check,
     midRail,
     footHeight: FOOT_HEIGHT,
     parts: {
@@ -111,7 +158,7 @@ export function computeDesk(input) {
       tabsShort,
       fasteners,
       feet: 4,
-      top: { width: W, depth: D, thickness: tt, finish: q.topFinish },
+      top: { width: topW, depth: topD, thickness: tt, finish: q.topFinish, panels: midRail ? 2 : 1 },
     },
     warnings,
   };
@@ -128,9 +175,10 @@ export function deskRows({ parts, size, prof }) {
     ['Joining Plate', `${size} series, 2 holes (JP-010-A equivalent)`, parts.tabs],
     ['Bolt', prof.bolt, parts.fasteners],
     ['T-nut', prof.nut, parts.fasteners],
+    ['Wood screw', 'for the top, through the joining plates; length = gap + plate + about 12 mm into the plywood', parts.tabs],
     ['Levelling foot', `${prof.footThread} thread, into the leg end bore`, parts.feet],
-    ['Plywood top', `${parts.top.width} × ${parts.top.depth} × ${parts.top.thickness} mm`, 1],
-    ...(parts.top.finish === 'linoleum' ? [['Linoleum sheet', `${parts.top.width} × ${parts.top.depth} mm, glued to the top`, 1]] : []),
+    ['Plywood top', `${parts.top.width} × ${parts.top.depth} × ${parts.top.thickness} mm`, parts.top.panels],
+    ...(parts.top.finish === 'linoleum' ? [['Linoleum sheet', `${parts.top.width} × ${parts.top.depth} mm, glued to the top`, parts.top.panels]] : []),
   ];
 }
 
@@ -143,17 +191,17 @@ export function deskSteps(d) {
     `Short top rails (${input.depth - 2 * p} mm): bolt a 2 hole inside corner gusset to the underside of each end, with a T-nut on its free face. ${loose}`,
     `Long top rails (${input.width - 2 * p} mm): bolt a 4 hole inside corner gusset to the underside of each end, with two T-nuts on its free face. ${loose}`,
     `Legs (${legLength} mm, tap the foot end ${prof.endTap} if needed): slide a leg onto the gusset at each end of a long rail, top flush with the rail. Tighten. You now have two U frames.`,
-    `Join the two U frames with the short rails, sliding their gussets into the legs, and tighten${midRail ? `. Add the centre rail at ${Math.round(input.width / 2)} mm the same way` : ''}.`,
+    `Join the two U frames with the short rails, sliding their gussets into the legs, and tighten${midRail ? `. Add the centre rail at ${Math.round(input.width / 2)} mm between the long rails, level with them, with a hidden corner connector in each end` : ''}.`,
     ...(withStretchers
       ? [
-          `End stretchers (${input.depth - 2 * p} mm): bolt a 2 hole inside corner bracket under each end, T-nut on the free face. Mark ${stretcherZ} mm up from the foot end of each leg, slide them in with their undersides on the marks and tighten.`,
-          `Back stretcher (${input.width - 2 * p} mm): a corner bracket under each end, slide it in between the back legs at the same height and tighten.`,
+          `End stretchers (${input.depth - 2 * p} mm): fit a hidden corner connector into each end and bolt a 2 hole inside corner bracket under each end, T-nut on the free face. Mark ${stretcherZ} mm up from the foot end of each leg, slide them in with their undersides on the marks and tighten the connector set screws and the brackets.`,
+          `Back stretcher (${input.width - 2 * p} mm): a hidden corner connector in each end and a corner bracket under it, slide it in between the back legs at the same height and tighten${midRail ? `. Add the centre rail at ${Math.round(input.width / 2)} mm between the long rails, level with them, with a hidden corner connector in each end` : ''}.`,
           'Drop a T-nut into the bottom slot of each end stretcher and of the back stretcher near the back corners, and screw a flat corner plate across the underside of each corner.',
         ]
       : []),
     `Screw a ${prof.footThread} levelling foot into the end of each leg.`,
-    `Drop ${parts.tabs * 2} T-nuts into the top face of the rails, about ${TAB_SPACING} mm apart, and bolt a joining plate across each, two screws per plate.`,
-    'Lay the plywood (and linoleum) on the joining plates and screw up through them into the top.',
+    `Drop ${parts.tabs} T-nuts into the bottom slot of the top rails, about ${TAB_SPACING} mm apart. Bolt a joining plate under the rail at each, so its second hole sticks out under the opening for the top.`,
+    `Drop the plywood (${parts.top.panels > 1 ? '2 panels, ' : ''}${parts.top.width} × ${parts.top.depth} mm, linoleum side up) in between the top rails. Drive a wood screw up through each plate's free hole into the top, leaving a ${Math.max(0, d.topGap)} mm gap above the plate so the top sits flush with the rails.`,
     'Level the desk with the feet, then re-tighten every bolt once.',
   ];
 }

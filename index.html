@@ -56,6 +56,13 @@
     }
     * { box-sizing: border-box; }
     [hidden] { display: none !important; }
+    /* switch for two-option settings: the select stays in the form, hidden, as the value */
+    .switch { display: inline-flex; align-items: center; gap: 8px; width: auto; margin: 0; padding: 0; border: 0; background: none; color: var(--ink); font: inherit; font-size: 11px; cursor: pointer; }
+    .switch .track { position: relative; width: 30px; height: 16px; border-radius: 8px; background: rgba(0,0,0,0.18); transition: background .15s; flex: none; }
+    .switch .track::after { content: ''; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3); transition: left .15s; }
+    .switch[aria-checked="true"] .track { background: var(--ink); }
+    .switch[aria-checked="true"] .track::after { left: 16px; }
+    .switch:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
     body { margin: 0; font: 14px/1.5 system-ui, sans-serif; color: var(--ink); background: var(--bg); }
     main { display: grid; grid-template-columns: 400px 1fr; height: 100vh; }
     aside {
@@ -116,7 +123,7 @@
         <label>Rod diameter <select name="rod"><option value="auto">Auto</option><option value="6">Ø6 mm</option><option value="8">Ø8 mm</option><option value="10">Ø10 mm</option></select></label>
         <label>Shelf material <select name="material"><option value="acrylic">Acrylic</option><option value="plywood">Plywood</option><option value="mdf">MDF</option><option value="osb">OSB</option><option value="mfc">MFC</option></select></label>
         <label>Thickness <select name="thickness"></select></label>
-        <label data-acrylic>Acrylic finish <select name="finish"><option value="fluted">Fluted</option><option value="flat">Flat</option></select></label>
+        <label data-acrylic>Acrylic finish <select name="finish"><option value="flat">Flat</option><option value="fluted">Fluted</option></select></label>
         <label data-colour>Colour <input name="color" type="color" /></label>
         <label>Load per shelf (kg) <input name="loadKg" type="number" min="0" /></label>
       </form>
@@ -125,10 +132,12 @@
         <label>Depth (mm) <input name="depth" type="number" min="300" step="10" /></label>
         <label>Height to top (mm) <input name="height" type="number" min="400" step="10" /></label>
         <label>Profile <select name="profile"><option value="auto">Auto</option><option value="20">2020</option><option value="30">3030</option><option value="40">4040</option></select></label>
-        <label>Low stretchers <select name="stretchers"><option value="yes">Yes</option><option value="no">No</option></select></label>
+        <label>Centre rail <select name="centreRail"><option value="no">No</option><option value="yes">Yes</option></select></label>
+        <label>Low stretchers <select name="stretchers"><option value="no">No</option><option value="yes">Yes</option></select></label>
         <label>Top thickness (mm) <input name="topThickness" type="number" min="9" max="40" /></label>
-        <label>Show top in 3D <select name="showTop"><option value="yes">Yes</option><option value="no">No</option></select></label>
-        <label>Top finish <select name="topFinish"><option value="linoleum">Linoleum</option><option value="plain">Plain plywood</option></select></label>
+        <label>Load on top (kg) <input name="loadKg" type="number" min="0" step="5" /></label>
+        <label>Table top in 3D <select name="showTop"><option value="no">Hidden</option><option value="yes">Shown</option></select></label>
+        <label>Top finish <select name="topFinish"><option value="plain">Plain plywood</option><option value="linoleum">Linoleum</option></select></label>
         <label>Linoleum colour <input name="topColor" type="color" /></label>
         <label>Frame colour <input name="frameColor" type="color" /></label>
       </form>

@@ -50,7 +50,8 @@ test('profile desk matches the CPlot layout', () => {
   const d = computeDesk({});
   assert.equal(d.size, 30); // 1220 x 740 -> 3030
   assert.equal(d.parts.cuts.find((c) => c.role.startsWith('Leg')).qty, 4);
-  assert.equal(d.legLength, 740 - 18 - 5 - 15); // top, tab, foot: legs reach the top of the frame
+  assert.equal(d.legLength, 740 - 15); // legs reach the top of the frame, above the foot
+  assert.equal(d.parts.top.width, 1220 - 60); // top drops in between the rails
   assert.equal(d.parts.largeGussets, 4); // CPlot BOM
   assert.equal(d.parts.smallGussets, 6);
   assert.equal(d.parts.cuts[1].length, 1220 - 60); // long rails fit between the legs
@@ -59,6 +60,13 @@ test('profile desk matches the CPlot layout', () => {
   assert.equal(d.parts.tabs, 12); // CPlot uses 12 mounting tabs on a 48 x 24 in top
   assert.ok(deskRows(d).length >= 8);
   assert.ok(deskSteps(d).length >= 8);
-  assert.ok(computeDesk({ width: 1800 }).midRail);
+  assert.ok(d.check.topSag <= d.check.topLimit && d.check.railSag <= d.check.railLimit); // CPlot size is fine
+  const wide = computeDesk({ width: 2400, profile: 20, loadKg: 80 });
+  assert.ok(wide.check.railSag > wide.check.railLimit); // no centre rail: long thin rails warn
+  assert.ok(wide.warnings.some((w) => w.includes('long rails sag')));
+  const rail = computeDesk({ centreRail: 'yes' });
+  assert.equal(rail.parts.hiddenConnectors, 8); // centre rail joins with HC-010-A
+  assert.equal(rail.parts.top.panels, 2);
+  assert.equal(rail.parts.top.width, (1220 - 90) / 2);
   assert.equal(computeDesk({ stretchers: 'no' }).parts.cuts.length, 3);
 });
