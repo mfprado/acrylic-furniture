@@ -3,7 +3,7 @@ import { computeDesk, deskRows, deskSteps, DESK_DEFAULTS } from './desk.js';
 import { partInfo } from './partinfo.js';
 import { createViewer, renderParts, renderSteps, shelfStepTags, deskStepTags } from './scene.js';
 import { downloadSpec } from './pdf.js';
-import { IDEAS, ideaCard } from './ideas.js';
+import { IDEAS, ideaCard, loadPeople } from './ideas.js';
 
 const viewer = createViewer(document.querySelector('#viewer'), { onPick: showPart });
 
@@ -111,6 +111,7 @@ TABS.shelf.form.elements.material.addEventListener('change', syncMaterial);
 
 // The ideas tab is a board, not a configurator: no form, no 3D view.
 $('ideaList').innerHTML = IDEAS.map(ideaCard).join('');
+document.querySelectorAll('#ideaList .people').forEach(loadPeople);
 const isTab = (name) => name in TABS || name === 'ideas';
 
 let tab = isTab(read(TAB_KEY)) ? read(TAB_KEY) : 'shelf';

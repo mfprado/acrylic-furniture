@@ -15,9 +15,38 @@ preview.
 ## Ideas
 
 The Ideas tab is a board of pieces that are not in the configurator yet. Suggest one by
-[opening an issue](https://github.com/mfprado/open-source-modular-furniture/issues/new?template=idea.md).
-Ideas go on the board as proposed. Working out parts and assembly comes later, when someone
-designs the piece. The `add-idea` skill (`.claude/skills/add-idea/`) turns an issue into a card.
+[opening an idea issue](https://github.com/mfprado/open-source-modular-furniture/issues/new?template=idea.md).
+
+Each idea keeps its issue **open**: it's where anyone who wants to help build it leaves
+notes, links and pictures. The card on the board links to the issue and lists its
+collaborators (everyone who opened or commented on it), loaded live from GitHub.
+
+Ideas go on the board as proposed. Working out parts and assembly comes later, when
+someone designs the piece.
+
+### Adding an idea to the board (contributors)
+
+Ideas are plain data in `src/ideas.js`. The `add-idea` skill in
+`.claude/skills/add-idea/SKILL.md` turns an issue into a card and follows the rules for
+what goes on one. To run it with [Claude Code](https://claude.com/claude-code):
+
+1. Clone the repo and start Claude Code in it. Skills in `.claude/skills/` load
+   automatically.
+2. Run the skill with the issue number:
+
+   ```text
+   /add-idea 12
+   ```
+
+   or just ask: `add the idea from issue #12 to the board`.
+3. Claude reads the issue, adds the entry to `src/ideas.js`, runs `node --test`, takes a
+   screenshot of the board and opens a PR that references the issue (`Refs #12`, never
+   `Closes`, so the issue stays open).
+4. Review the card wording against the issue and merge.
+
+Without Claude Code, follow the same rules by hand: copy an entry in `src/ideas.js`,
+keep the proposer's words, add `issue`, and reference the issue in the PR without
+closing it.
 
 ## Construction
 

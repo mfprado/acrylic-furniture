@@ -8,6 +8,11 @@ description: Adds a furniture idea to the Ideas tab (the ideas board) from a Git
 The Ideas tab collects pieces that are not in the configurator yet. A card records the idea
 **as it was proposed**. It is not a design.
 
+Every idea has a GitHub issue, and **the issue stays open**: it is where people who want to
+help build the idea leave notes, links and pictures. The card links to it and lists its
+collaborators (whoever opened or commented on the issue), loaded live from GitHub, so the
+list needs no upkeep.
+
 ## What a card holds
 
 Each idea is one entry in `IDEAS` in `src/ideas.js`:
@@ -20,7 +25,7 @@ Each idea is one entry in `IDEAS` in `src/ideas.js`:
     'Inspired by glass clamps: very cheap on Amazon, and they look good.',
   ],
   links: [{ name: 'Glass clamps (inspiration)', url: 'https://…' }], // optional
-  issue: 12,                      // optional: the GitHub issue it came from
+  issue: 12,                      // the GitHub issue: link and collaborators
   image: 'https://…',             // optional: a picture the proposer shared
 }
 ```
@@ -43,10 +48,14 @@ Each idea is one entry in `IDEAS` in `src/ideas.js`:
 ## Steps
 
 1. Read the issue (title, body, comments from the proposer). If the idea isn't clear enough
-   for one bullet point, ask on the issue instead of guessing.
+   for one bullet point, ask on the issue instead of guessing. If the idea came from
+   somewhere else (a chat, a message), open an issue for it first with the `idea` label.
 2. Add the entry to `src/ideas.js`, with `issue` set.
 3. Run `node --test`.
 4. Serve the folder (`python3 -m http.server 8000`), open the Ideas tab and take a
    screenshot of the board.
 5. Open a PR titled `Add idea: <title>`, with the screenshot in the description and
-   `Closes #<issue>`. The issue's job is done once the idea is on the board.
+   `Refs #<issue>`. **Never `Closes`/`Fixes`**: those keywords close the issue on merge, and
+   the issue must stay open for collaborators.
+6. Make sure the issue has the `idea` label. Close it only when the piece is built into the
+   configurator, or the proposer drops it.

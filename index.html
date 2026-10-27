@@ -125,6 +125,12 @@
     .idea ul { margin: 0; padding-left: 18px; }
     .idea .links { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 12px 0 0; font: 11px var(--mono); }
     .idea a { color: var(--ink); }
+    .idea .people { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line); font: 11px var(--mono); }
+    .idea .people h4 { flex-basis: 100%; margin: 0; font: 600 10px var(--mono); text-transform: uppercase; letter-spacing: .14em; color: var(--muted); }
+    .idea .people a { display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
+    .idea .people img { width: 20px; height: 20px; border-radius: 50%; }
+    .idea .join { display: block; margin-top: 12px; padding: 6px; text-align: center; font: 600 10.5px var(--mono); letter-spacing: .08em; text-transform: uppercase; text-decoration: none; border: 1px solid #2c3035; border-radius: 3px; }
+    .idea .join:hover { background: #2c3035; color: #e9ebed; }
     @media (max-width: 800px) { main { grid-template-columns: 1fr; height: auto; } aside { order: 2; border-right: 0; } #viewer { height: 60vh; } #ideas { height: auto; padding: 16px; } #ideaList { grid-template-columns: 1fr; } }
   </style>
 </head>
