@@ -27,28 +27,52 @@ someone designs the piece.
 ### Adding an idea to the board (contributors)
 
 Ideas are plain data in `src/ideas.js`. The `add-idea` skill in
-`.claude/skills/add-idea/SKILL.md` turns an issue into a card and follows the rules for
-what goes on one. To run it with [Claude Code](https://claude.com/claude-code):
+`.agents/skills/add-idea/SKILL.md` turns an issue into a card and follows the rules for
+what goes on one. To run it with an AI coding agent (Claude Code, Codex or another):
 
-1. Clone the repo and start Claude Code in it. Skills in `.claude/skills/` load
-   automatically.
-2. Run the skill with the issue number:
+1. Clone the repo and start the agent in it. Claude Code loads the skills automatically
+   (`/add-idea`); other agents find them through `AGENTS.md`.
+2. Ask with the issue number:
 
    ```text
-   /add-idea 12
+   add the idea from issue #12 to the board
    ```
 
-   or just ask: `add the idea from issue #12 to the board`.
-3. Claude reads the issue, adds the entry to `src/ideas.js`, draws a sketch if the issue
-   has a picture of the goal (for example "a square lamp like this" plus a photo), runs
-   `node --test`, takes a screenshot of the board and opens a PR that references the
+   In Claude Code you can also type `/add-idea 12`.
+3. The agent reads the issue, adds the entry to `src/ideas.js`, draws a sketch if the
+   issue has a picture of the goal (for example "a square lamp like this" plus a photo),
+   runs `node --test`, takes a screenshot of the board and opens a PR that references the
    issue (`Refs #12`, never `Closes`, so the issue stays open).
 4. Review the card wording against the issue, and the sketch against the picture, then
    merge.
 
-Without Claude Code, follow the same rules by hand: copy an entry in `src/ideas.js`,
+Without an agent, follow the same rules by hand: copy an entry in `src/ideas.js`,
 keep the proposer's words, add `issue`, and reference the issue in the PR without
 closing it.
+
+## Contributing
+
+You don't need to code. Designers are welcome: the AI agent does the programming, you make
+the design decisions.
+
+1. Fork the repo on GitHub and clone your fork (the agent can help with both).
+2. Start an AI coding agent in the folder (Claude Code, Codex, Cursor, Gemini CLI...) and
+   say:
+
+   ```text
+   let's work on this
+   ```
+
+3. It follows `.agents/skills/contribute/SKILL.md`: it gets the site running on your
+   computer, asks what you want to do, and builds it with you in small steps, showing a
+   screenshot after each one. For a new piece it first writes a design brief with you
+   (`docs/designs/<piece>.md`): parts and where their sizes come from, the settings people
+   can change, the rules, the warnings and the assembly steps. Then it builds the parts
+   list, the tab, the 3D model and the PDF, one at a time.
+4. It checks the work (tests plus screenshots of each scenario) and opens a pull request
+   in the standard shape, `.github/pull_request_template.md`: what it adds, the issue,
+   the design brief, parts and sources, test output, screenshots, assumptions to verify
+   and next steps.
 
 ## Construction
 
