@@ -3,7 +3,7 @@
 Instructions for AI coding agents (Codex, Claude Code, Cursor, Gemini CLI and others).
 
 A static site with no build step: `index.html` plus ES modules in `src/`. Serve the folder
-(`python3 -m http.server 8000`) and run the tests with `node --test`. See `README.md`.
+(`node scripts/serve.mjs`, port 8000) and run the tests with `node --test`. See `README.md`.
 
 ## Skills
 

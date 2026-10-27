@@ -74,7 +74,7 @@ A sketch shows what the idea looks like. It is not a design.
 2. Add the entry to `src/ideas.js`, with `issue` set. If the issue or the request has a
    reference image, draw its `sketch`.
 3. Run `node --test`.
-4. Serve the folder (`python3 -m http.server 8000`), open the Ideas tab and take a
+4. Serve the folder (`node scripts/serve.mjs`), open the Ideas page and take a
    screenshot of the board.
 5. Open a PR titled `Add idea: <title>`, with the screenshot in the description and
    `Refs #<issue>`. **Never `Closes`/`Fixes`**: those keywords close the issue on merge, and
