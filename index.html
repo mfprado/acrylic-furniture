@@ -76,14 +76,34 @@
     .switch[aria-checked="true"] .track::after { left: 16px; }
     .switch:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
     body { margin: 0; font: 14px/1.5 system-ui, sans-serif; color: var(--ink); background: var(--bg); }
-    main { display: grid; grid-template-columns: 400px 1fr; height: 100vh; }
+    body { display: flex; flex-direction: column; height: 100vh; }
+    main { display: grid; grid-template-columns: 400px 1fr; flex: 1; min-height: 0; }
+    /* top bar: furniture pieces grouped by type, one menu per group */
+    .topbar { position: relative; z-index: 10; display: flex; align-items: center; gap: 24px; padding: 0 24px; height: 52px; flex: none; color: #e9ebed; background: #2c3035; border-bottom: 1px solid #1b1e21; font: 12px var(--mono); }
+    .brand { display: flex; align-items: center; gap: 10px; margin-right: auto; color: inherit; text-decoration: none; }
+    .brand img { width: 24px; height: 24px; }
+    .brand h1 { margin: 0; color: inherit; font: 600 13px var(--mono); text-transform: uppercase; letter-spacing: 0.14em; white-space: nowrap; }
+    .topnav { display: flex; align-items: center; gap: 4px; }
+    .menu { position: relative; }
+    .menu-button, .nav-link { display: block; padding: 8px 12px; font: 600 10.5px var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: #c9cdd1; background: none; border: 0; border-bottom: 2px solid transparent; text-decoration: none; cursor: pointer; white-space: nowrap; }
+    .menu-button::after { content: ' ▾'; }
+    .menu-button:hover, .nav-link:hover, .menu-button[aria-expanded=true] { color: #fff; }
+    .menu.current .menu-button, .nav-link[aria-current=page] { color: #fff; border-bottom-color: #e9ebed; }
+    .menu-button:focus-visible, .nav-link:focus-visible, .menu-list a:focus-visible { outline: 2px solid #e9ebed; outline-offset: -2px; }
+    .menu-list { position: absolute; top: calc(100% + 6px); left: 0; min-width: 240px; margin: 0; padding: 6px; list-style: none; background: var(--chrome); border: 1px solid #a3a8ad; border-radius: 3px; box-shadow: 0 8px 24px rgba(0,0,0,.2); }
+    .menu-list a { display: block; padding: 8px 10px; color: var(--ink); text-decoration: none; border-radius: 2px; font: 600 12px var(--mono); }
+    .menu-list a small { display: block; font-weight: 400; font-size: 11px; color: var(--muted); }
+    .menu-list a:hover { background: rgba(255,255,255,.45); }
+    .menu-list a[aria-current=page] { background: #2c3035; color: #e9ebed; }
+    .menu-list a[aria-current=page] small { color: #b9bec3; }
+    .crumb { margin: 0 0 4px; font: 600 10.5px var(--mono); text-transform: uppercase; letter-spacing: 0.16em; color: var(--muted); }
     aside {
       padding: 24px; overflow-y: auto; font: 12px/1.55 var(--mono); background: var(--chrome);
       border-right: 1px solid #a3a8ad;
       box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.35), 2px 0 10px rgba(0, 0, 0, 0.06);
     }
-    h1 {
-      font: 600 17px var(--mono); text-transform: uppercase; letter-spacing: 0.14em; margin: 0 0 18px;
+    .page-title {
+      font: 600 17px var(--mono); text-transform: uppercase; letter-spacing: 0.14em; margin: 0 0 12px;
       color: #2a2e33;
     }
     h2 { font: 600 11px var(--mono); text-transform: uppercase; letter-spacing: 0.16em; color: var(--muted); margin: 26px 0 8px; padding-bottom: 6px; border-bottom: 1px solid var(--line); box-shadow: 0 1px 0 rgba(255,255,255,0.3); }
@@ -105,10 +125,7 @@
     .donate { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--muted); }
     .donate a { display: block; text-align: center; padding: 8px; font: 600 10.5px var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: #2c3035; border: 1px solid #2c3035; border-radius: 3px; text-decoration: none; }
     .donate a:hover { background: #2c3035; color: #e9ebed; }
-    .tabs { display: flex; gap: 0; margin: 0 0 16px; border: 1px solid #2c3035; border-radius: 3px; overflow: hidden; }
-    .tab { flex: 1; padding: 7px; font: 600 10.5px var(--mono); letter-spacing: 0.1em; text-transform: uppercase; background: transparent; color: #2c3035; border: 0; cursor: pointer; }
-    .tab[aria-selected=true] { background: #2c3035; color: #e9ebed; }
-    #viewer { height: 100vh; background: linear-gradient(#fff, #eceef0); }
+    #viewer { height: 100%; background: linear-gradient(#fff, #eceef0); }
     table { border-collapse: collapse; width: 100%; }
     td { padding: 6px 4px; border-bottom: 1px solid var(--line); vertical-align: top; }
     td:last-child { text-align: right; font-weight: 600; }
@@ -116,7 +133,7 @@
     #summary, #rodtotal, #holes { color: var(--muted); }
     ol { padding-left: 20px; }
     /* ideas board, in place of the 3D view */
-    #ideas { height: 100vh; overflow-y: auto; padding: 24px 32px; background: linear-gradient(#fff, #eceef0); }
+    #ideas { height: 100%; overflow-y: auto; padding: 24px 32px; background: linear-gradient(#fff, #eceef0); }
     #ideas > h2 { margin-top: 0; }
     #ideaList { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; align-items: start; }
     .idea { padding: 16px; background: #fff; border: 1px solid var(--line); border-radius: 3px; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
@@ -133,19 +150,27 @@
     .idea .people img { width: 20px; height: 20px; border-radius: 50%; }
     .idea .join { display: block; margin-top: 12px; padding: 6px; text-align: center; font: 600 10.5px var(--mono); letter-spacing: .08em; text-transform: uppercase; text-decoration: none; border: 1px solid #2c3035; border-radius: 3px; }
     .idea .join:hover { background: #2c3035; color: #e9ebed; }
+    @media (max-width: 800px) {
+      body { display: block; height: auto; }
+      .topbar { flex-wrap: wrap; gap: 0 12px; height: auto; padding: 8px 16px; }
+      .brand { margin-right: 0; flex-basis: 100%; padding: 4px 0; }
+      .topnav { margin: 0 -12px; overflow-x: auto; }
+      .menu { position: static; }
+      .menu-list { left: 8px; right: 8px; top: 100%; }
+    }
     @media (max-width: 800px) { main { grid-template-columns: 1fr; height: auto; } aside { order: 2; border-right: 0; } #viewer { height: 60vh; } #ideas { height: auto; padding: 16px; } #ideaList { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
+  <header class="topbar">
+    <a class="brand" href="#shelf"><img src="favicon.svg" alt="" /><h1>Open Source Modular Furniture</h1></a>
+    <nav class="topnav" id="topnav" aria-label="Furniture"></nav>
+  </header>
   <main>
     <aside>
-      <h1>Open Source Modular Furniture</h1>
+      <p class="crumb" id="crumb"></p>
+      <p class="page-title" id="pageTitle">Rod shelf</p>
       <p class="intro">An <strong>open source furniture</strong> project. Think of it as Lego for adults: standard rods, profiles, clamps and sheets you can buy anywhere, snapped together into furniture you size yourself. Set the dimensions and get the parts list, cut list, 3D preview and a PDF build guide. Free, and the <a href="https://github.com/mfprado/open-source-modular-furniture">code is on GitHub</a>.</p>
-      <nav class="tabs">
-        <button type="button" data-tab="shelf" class="tab">Rod shelf</button>
-        <button type="button" data-tab="desk" class="tab">Profile desk</button>
-        <button type="button" data-tab="ideas" class="tab">Ideas</button>
-      </nav>
       <form id="config" data-for="shelf">
         <label>Width (mm) <input name="width" type="number" min="200" step="10" /></label>
         <label>Depth (mm) <input name="depth" type="number" min="100" step="10" /></label>
