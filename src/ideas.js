@@ -1,7 +1,7 @@
 // Ideas board: pieces that are not in the configurator yet. A card records the idea as it
 // was proposed, nothing more: parts, sizes and assembly are worked out later, when someone
 // designs it. Each idea keeps an open GitHub issue where people collaborate on it, and the
-// card lists who has joined in. Adding one: see .claude/skills/add-idea/SKILL.md.
+// card lists who has joined in. Adding one: see .agents/skills/add-idea/SKILL.md.
 
 const REPO = 'mfprado/open-source-modular-furniture';
 
