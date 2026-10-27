@@ -52,19 +52,29 @@ Start with:
 
 Check what's already done; skip what is.
 
-1. **Where are we running?**
-   - On their computer (a terminal, a desktop app or an editor such as VS Code or
-     Cursor): continue below.
-   - In the cloud (a web or mobile session, e.g. claude.ai/code or Codex cloud): there's
-     nothing to install. The
-     repo in the session must be *their copy* (fork) so you can push to it; if it's the
-     original and they don't own it, ask them to create a fork on GitHub (step 1.3 below)
-     and start a new session on it. You run the site and take the screenshots; show them
-     each screenshot (attach it in the chat if your agent can, or tell them where the file is).
-2. **Tools.** Check `git --version` and `node --version` (Node 18 or later; it runs the
-   tests). Python 3 or Node serves the site. If something is missing, give the one
-   installer link they need (https://nodejs.org for Node; on a Mac, `xcode-select
-   --install` gives git) and wait.
+1. **Where are we running?** The designer should try the site in their own browser, so
+   the session has to run on their computer.
+   - On their computer (the Claude desktop app with **This computer** as the environment, a terminal, or an
+     editor such as VS Code or Cursor): continue below.
+   - In the cloud (the desktop app with a **Cloud** environment such as **Default**, claude.ai/code, Codex cloud):
+     `localhost` here is the cloud machine, not their computer, so they can't open the site
+     in their browser. Explain that in one sentence and help them switch: in the Claude
+     desktop app, open **Code**, start a new session, click the first button under the message box
+     and pick **This computer** (under Local), then click **Choose…** next to it and pick
+     the project folder (step 1.2). If they'd
+     rather stay in the cloud, you run the site and show them screenshots instead.
+   - **The project isn't on their computer yet** (the usual first time: they chose a
+     folder such as Documents and asked you to clone the repository): clone it there with
+     `git clone https://github.com/mfprado/open-source-modular-furniture.git`, then keep
+     working inside the clone in this same session: run every command from that folder,
+     and read its `AGENTS.md` and this skill from there. Tell them: "Downloaded. Next
+     time, click **Choose…**, pick the folder *open-source-modular-furniture* in your
+     Documents and say *let's work on this*." Then carry on: ask what they want (step 0)
+     if you haven't yet, and start the site (step 2).
+2. **Tools.** Check `git --version` and `node --version` (Node 18 or later: it runs the
+   site and the tests). If something is missing, give the one installer link they need
+   (https://nodejs.org for Node; https://git-scm.com for Git on Windows; on a Mac,
+   `xcode-select --install` gives git) and wait.
 3. **Their copy on GitHub (fork).** Check `git remote -v`.
    - `origin` is their own fork: good.
    - `origin` is `mfprado/open-source-modular-furniture` and they are not the owner: they
@@ -83,10 +93,11 @@ Check what's already done; skip what is.
 
 ## 2. Run the site
 
-No build step and nothing to install. From the repo folder:
+No build step and nothing to install. `.claude/launch.json` tells the Claude desktop app
+how to start it; anywhere else, from the repo folder:
 
 ```sh
-python3 -m http.server 8000   # or: npx serve -l 8000
+node scripts/serve.mjs        # http://localhost:8000
 ```
 
 Run it in the background (or in a second terminal if your agent can't), then:
@@ -105,7 +116,9 @@ Run it in the background (or in a second terminal if your agent can't), then:
   > refresh and see it. Keep this chat open: if you close it, the copy stops and the
   > page shows "This site can't be reached". Just ask me to start it again.
 
-  Wait until they say they can see it.
+  Wait until they say they can see it. In the Claude desktop app the same site can also
+  show in the app's **Browser** pane (Cmd+Shift+B on a Mac, Ctrl+Shift+B on Windows), if
+  they'd rather not switch windows.
 - **In the cloud:** they can't open localhost. Take a screenshot (below) and show it.
 
 Run the tests once now so you know they pass before anything changes: `node --test`.
@@ -173,8 +186,9 @@ Chrome, then give them this list one item at a time and wait for their answer to
 8. Check the Rod shelf and Profile desk pages still work.
 9. Make the Chrome window narrow, like a phone. Is it still usable?
 
-When something's wrong, fix it, tell them to refresh, and ask again. When they're happy,
-do your own checks and keep the evidence for the PR:
+When something's wrong, fix it, tell them to refresh, and ask again. When they're happy
+(they'll often say "I'm happy, let's send it"), do your own checks and keep the evidence for
+the PR:
 
 1. `node --test`. Every test passes. Keep the output.
 2. Screenshots in `pr-screenshots/`:

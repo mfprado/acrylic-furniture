@@ -3,7 +3,7 @@
 Instructions for AI coding agents (Codex, Claude Code, Cursor, Gemini CLI and others).
 
 A static site with no build step: `index.html` plus ES modules in `src/`. Serve the folder
-(`python3 -m http.server 8000`) and run the tests with `node --test`. See `README.md`.
+(`node scripts/serve.mjs`, port 8000) and run the tests with `node --test`. See `README.md`.
 
 ## Skills
 
@@ -17,6 +17,10 @@ one, read that file and follow it, even if your agent doesn't load skills by its
 
 Contributors are often designers who don't code: explain in plain words, run the commands
 yourself, and show results with screenshots.
+
+Just cloned this repository for someone ("clone it and let's start working there")? Work
+inside the clone and follow the `contribute` skill from the start: ask what they want to
+do, then start the site.
 
 ## Pull requests
 
