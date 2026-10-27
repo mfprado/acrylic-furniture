@@ -1,6 +1,6 @@
 # From an idea to a configurator
 
-A configurator is a tab on the site where someone sets the sizes of a piece and gets its
+A configurator is a page on the site, opened from the top bar menu, where someone sets the sizes of a piece and gets its
 parts list, a 3D preview and a PDF build guide. The Rod shelf and the Profile desk are the
 two that exist; read `src/desk.js` before starting, it's the clearest example.
 
@@ -125,20 +125,24 @@ one per warning.
 Show the designer the parts list for the defaults (print `<kind>Rows(compute<Kind>({}))`
 as a table) and the steps. Ask if they match what they'd buy and do.
 
-### 6. The tab and the form
+### 6. The page, its menu entry and the form
 
+- `src/catalog.js`: add the piece to its furniture type in `CATALOG`, e.g.
+  `{ id: '<kind>', label: 'Wall shelf', blurb: 'Rods and a wall rail' }` under Shelving,
+  or start a new group if none fits (ask the designer which). That puts it in the top bar
+  menu, and `<kind>` becomes its address: `localhost:8000/#<kind>`. Don't rename it later,
+  since links point to it.
 - `index.html`:
-  - a tab button in `<nav class="tabs">`: `<button type="button" data-tab="<kind>" class="tab">Wall shelf</button>`;
   - a form `<form id="<kind>Config" data-for="<kind>">` with one `<label>` per setting,
     copying the existing ones (`type="number"` with `min`/`max`/`step` from the brief, or
     a `<select>`; a two-option select shows as a switch automatically);
   - add `<kind>` to the two `data-for="shelf desk"` lists (the results panel and
-    `#viewer`) so they show on the new tab.
+    `#viewer`) so they show on the new page.
 - `src/main.js`: import from `./<kind>.js` and add an entry to `TABS` with `form`,
   `defaults`, `strings` (the settings that aren't numbers), `compute`, `rows`, `steps`,
   `summary` (one line of key figures) and `total`.
 
-At this point the tab works without a 3D model, so show the form and parts list.
+At this point the page works without a 3D model, so show the form and parts list.
 
 ### 7. The 3D model
 
@@ -182,7 +186,7 @@ pages.
 - **README**: a short section on the new piece (what it is, how it's built) like the
   *Construction* section, and its unknowns under *Assumptions to verify*.
 - **Ideas board**: if the piece came from an idea, remove its card from `src/ideas.js`,
-  since it now has its own tab, and use `Closes #<issue>` in the PR.
+  since it now has its own page, and use `Closes #<issue>` in the PR.
 - `index.html` `<meta name="description">` and the intro can mention the new piece; ask
   the designer whether they want that.
 - Then back to step 4 of `SKILL.md`: check it, and send it.

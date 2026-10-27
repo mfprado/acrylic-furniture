@@ -37,7 +37,7 @@ Start with:
 > Hi! I'll help you add something to Open Source Modular Furniture and send it to the
 > owner for review. What would you like to do?
 >
-> 1. **Design a new piece** (a new configurator tab), from an idea on the Ideas board or
+> 1. **Design a new piece** (a new configurator page), from an idea on the Ideas board or
 >    your own
 > 2. **Improve an existing piece** (a new option, a part, a fix to the shelf or desk)
 > 3. **Add an idea to the Ideas board** (no design yet)
@@ -115,7 +115,7 @@ Run the tests once now so you know they pass before anything changes: `node --te
 Screenshots go in `pr-screenshots/` (git ignores it; they're for the PR, not the repo).
 
 1. If Playwright is available (`node -e "require('playwright')"` works), use it: open
-   `http://localhost:8000`, click the right tab, set the form values, wait about 2 seconds
+   `http://localhost:8000`, open the right page (`http://localhost:8000/#shelf`, `#desk`, or the piece's id), set the form values, wait about 2 seconds
    for the 3D view, and save a 1400 × 800 screenshot.
 2. Otherwise ask before installing anything: `npm i --no-save playwright` and
    `npx playwright install chromium` download a browser (a few hundred MB).
@@ -153,7 +153,7 @@ Rules for any change:
   like `FLANGES` in `src/calc.js`. If something isn't known, say so in the README's
   *Assumptions to verify*, not a made-up value.
 - **Don't break the existing pieces.** After every round, check the Rod shelf and Profile
-  desk tabs still show their 3D view and parts list.
+  desk pages still show their 3D view and parts list.
 - Keep the change to what was agreed. Ideas for other changes go in a list for the PR's
   *Next steps*.
 
@@ -163,14 +163,14 @@ First the designer uses it themselves, the way someone visiting the site would. 
 sure the local version is running (step 2), remind them it's at `localhost:8000` in
 Chrome, then give them this list one item at a time and wait for their answer to each:
 
-1. Open the new or changed tab. Does the 3D view look like the piece?
+1. Open the new or changed piece from the top bar menu. Does the 3D view look like the piece?
 2. Change the sizes to the smallest and the largest. Does it still look right?
 3. Switch each option on and off.
 4. Try to make each warning appear (too wide, too heavy…). Does the warning make sense?
 5. Click a few parts in the 3D view. Is the description right?
 6. Read the parts list. Is it what you'd buy?
 7. Click **Download spec (PDF)** and read it. Could someone build it from this?
-8. Check the Rod shelf and Profile desk tabs still work.
+8. Check the Rod shelf and Profile desk pages still work.
 9. Make the Chrome window narrow, like a phone. Is it still usable?
 
 When something's wrong, fix it, tell them to refresh, and ask again. When they're happy,
@@ -178,12 +178,12 @@ do your own checks and keep the evidence for the PR:
 
 1. `node --test`. Every test passes. Keep the output.
 2. Screenshots in `pr-screenshots/`:
-   - the new or changed tab with its default settings, showing the 3D view and parts list;
+   - the new or changed page with its default settings, showing the 3D view and parts list;
    - one screenshot per scenario that matters: the smallest and largest sizes allowed,
      each option switched on, and each warning showing;
    - for anything that changes the PDF: click **Download spec (PDF)** and screenshot its
      first page and one assembly page;
-   - the existing tabs (Rod shelf, Profile desk) still working.
+   - the existing pages (Rod shelf, Profile desk) still working.
 3. Open the browser console (or read Playwright's console messages): no errors.
 4. Narrow window (about 400 px wide) for one screenshot: the page still works on a phone.
 5. Read your own diff (`git diff upstream/main`) as the reviewer would: anything

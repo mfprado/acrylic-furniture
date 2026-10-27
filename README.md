@@ -80,7 +80,7 @@ walkthrough of contributing with the Claude desktop app, from setup to pull requ
    screenshot after each one. For a new piece it first writes a design brief with you
    (`docs/designs/<piece>.md`): parts and where their sizes come from, the settings people
    can change, the rules, the warnings and the assembly steps. Then it builds the parts
-   list, the tab, the 3D model and the PDF, one at a time.
+   list, the page, the 3D model and the PDF, one at a time.
 4. It checks the work (tests plus screenshots of each scenario) and opens a pull request
    in the standard shape, `.github/pull_request_template.md`: what it adds, the issue,
    the design brief, parts and sources, test output, screenshots, assumptions to verify
