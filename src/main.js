@@ -3,6 +3,7 @@ import { computeDesk, deskRows, deskSteps, DESK_DEFAULTS } from './desk.js';
 import { partInfo } from './partinfo.js';
 import { createViewer, renderParts, renderSteps, shelfStepTags, deskStepTags } from './scene.js';
 import { downloadSpec } from './pdf.js';
+import { IDEAS, ideaCard } from './ideas.js';
 
 const viewer = createViewer(document.querySelector('#viewer'), { onPick: showPart });
 
@@ -108,15 +109,20 @@ for (const [name, t] of Object.entries(TABS)) {
 }
 TABS.shelf.form.elements.material.addEventListener('change', syncMaterial);
 
-let tab = TABS[read(TAB_KEY)] ? read(TAB_KEY) : 'shelf';
+// The ideas tab is a board, not a configurator: no form, no 3D view.
+$('ideaList').innerHTML = IDEAS.map(ideaCard).join('');
+const isTab = (name) => name in TABS || name === 'ideas';
+
+let tab = isTab(read(TAB_KEY)) ? read(TAB_KEY) : 'shelf';
 const framed = {};
 let current = null;
 
 function showTab(name) {
   tab = name;
   write(TAB_KEY, name);
-  document.querySelectorAll('[data-for]').forEach((el) => (el.hidden = el.dataset.for !== name));
+  document.querySelectorAll('[data-for]').forEach((el) => (el.hidden = !el.dataset.for.split(' ').includes(name)));
   document.querySelectorAll('.tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
+  if (!TABS[name]) return;
   framed[name] = null; // re-frame when switching furniture
   render();
 }
