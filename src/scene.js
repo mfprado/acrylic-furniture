@@ -924,6 +924,53 @@ function buildDesk(design) {
   return g;
 }
 
+// A London stock brick sitting on y = 0, centred on x and z: bevelled body, a raised rim
+// round a recessed top (the frog) with LONDON BRICK on its floor, and a slightly different
+// red per brick (seed) so the individual bricks read.
+const FROG_RIM = 6; // depth of the recess
+function londonBrick({ width: w, length: l, height: h }, seed) {
+  const g = new THREE.Group();
+  const jitter = (Math.sin(seed * 12.9898) * 43758.5453) % 1;
+  const j = Math.abs(jitter);
+  const color = new THREE.Color().setHSL(0.015 + j * 0.02, 0.55 + j * 0.15, 0.2 + j * 0.07);
+  const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.95 });
+  const rect = (a, b) => new THREE.Shape().moveTo(-a / 2, -b / 2).lineTo(a / 2, -b / 2).lineTo(a / 2, b / 2).lineTo(-a / 2, b / 2).closePath();
+  const bev = { bevelEnabled: true, bevelSize: 1.5, bevelThickness: 1.5, bevelSegments: 2 };
+  // shapes are drawn in x, y and extruded along z; stand them up so the extrusion goes up
+  const solid = (shape, depth, opts) => {
+    const geo = new THREE.ExtrudeGeometry(shape, { depth, ...opts });
+    geo.rotateX(-Math.PI / 2);
+    return geo;
+  };
+  const inner = 1.5; // bevel size, keeps the outside at the brick size
+  const body = mesh(solid(rect(w - 2 * inner, l - 2 * inner), h - FROG_RIM - 2 * inner, bev), mat);
+  body.position.y = inner;
+  g.add(body);
+  const rimShape = rect(w - 2, l - 2); // the rim's own bevel is 1 mm
+  rimShape.holes.push(new THREE.Path().moveTo(-(w / 2 - 18), -(l / 2 - 20)).lineTo(-(w / 2 - 18), l / 2 - 20).lineTo(w / 2 - 18, l / 2 - 20).lineTo(w / 2 - 18, -(l / 2 - 20)).closePath());
+  const rim = mesh(solid(rimShape, FROG_RIM - 2, { bevelEnabled: true, bevelSize: 1, bevelThickness: 1, bevelSegments: 1 }), mat);
+  rim.position.y = h - FROG_RIM + 1;
+  g.add(rim);
+  // lettering on the frog floor, like the reference brick
+  const canvas = Object.assign(document.createElement('canvas'), { width: 512, height: 192 });
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = `#${color.clone().multiplyScalar(0.8).getHexString()}`;
+  ctx.fillRect(0, 0, 512, 192);
+  ctx.fillStyle = `#${color.clone().multiplyScalar(0.55).getHexString()}`;
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 84px sans-serif';
+  ctx.fillText('LONDON', 256, 90);
+  ctx.font = 'italic bold 60px sans-serif';
+  ctx.fillText('BRICK', 256, 160);
+  const floorGeo = new THREE.PlaneGeometry(l - 40, w - 36);
+  floorGeo.rotateX(-Math.PI / 2);
+  floorGeo.rotateY(Math.PI / 2); // lettering runs along the brick
+  const floor = new THREE.Mesh(floorGeo, new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(canvas), roughness: 1 }));
+  floor.position.y = h - FROG_RIM + 0.2;
+  g.add(floor);
+  return g;
+}
+
 // Brick bench: the desk frame without its top, rod support blocks on the long rails, Ø8 rods
 // lying front to back in the blocks, and the bricks flat on the rods. Same axes as the desk.
 const BRICK_COLOR = '#a4432f';
@@ -933,7 +980,7 @@ const BLOCK_MODEL = { x: 24, y: 16, z: 16 };
 
 function buildBrickbench(design) {
   const g = new THREE.Group();
-  const { p, size, prof, frameTop, legLength, stretcherZ, footHeight: fh, rods, brick, width: W, depth: D, input } = design;
+  const { p, size, prof, frameTop, rodZ, legLength, stretcherZ, footHeight: fh, rods, brick, width: W, depth: D, input } = design;
   const railZ = frameTop - p; // underside of the top rails
   const frame = new THREE.MeshPhysicalMaterial({ color: '#949494', metalness: 0.8, roughness: 0.42 });
   const X = (x) => x - W / 2;
@@ -995,26 +1042,27 @@ function buildBrickbench(design) {
   tag = 'feet';
   for (const [x, y] of legs) add(levellingFoot(p), `Levelling foot ${prof.footThread}`).position.copy(at(x, y, 0));
 
-  // the rods: one every half brick along the length, axis level with the top of the rails
-  const rodXs = Array.from({ length: rods.count }, (_, i) => rods.first + i * rods.pitch);
+  // the rods: one every half brick along the length, axis at the middle of the rails, each
+  // held at both ends by a block on the inner face of a long rail
+  const rodXs = Array.from({ length: rods.count }, (_, i) => p + rods.first + i * rods.pitch);
   tag = 'blocks';
   for (const x of rodXs)
-    for (const y of [BLOCK_MODEL.y / 2, D - BLOCK_MODEL.y / 2])
-      add(mesh(new THREE.BoxGeometry(BLOCK_MODEL.x, BLOCK_MODEL.z, BLOCK_MODEL.y), alu), 'Rod support block', 2).position.copy(at(x, y, frameTop));
+    for (const y of [p + BLOCK_MODEL.y / 2, D - p - BLOCK_MODEL.y / 2])
+      add(mesh(new THREE.BoxGeometry(BLOCK_MODEL.x, BLOCK_MODEL.z, BLOCK_MODEL.y), alu), 'Rod support block', 2).position.copy(at(x, y, rodZ));
   tag = 'rods';
   for (const x of rodXs) {
     const r = add(rod(rods.diameter, rods.length), `Chrome rod Ø${rods.diameter} × ${rods.length} mm`);
     r.rotation.x = Math.PI / 2; // lie front to back
-    r.position.copy(at(x, D / 2, frameTop));
+    r.position.copy(at(x, D / 2, rodZ));
   }
 
-  // bricks flat on the rods, touching
+  // bricks flat on the rods, inside the rails, touching (can be hidden in the viewer to see the frame)
   tag = 'bricks';
-  const brickMat = new THREE.MeshStandardMaterial({ color: BRICK_COLOR, roughness: 0.92 });
+  if (input.showBricks === 'no') return g;
   for (let i = 0; i < input.bricksLong; i++)
     for (let j = 0; j < input.rows; j++)
-      add(mesh(new THREE.BoxGeometry(brick.width, brick.height, brick.length), brickMat), 'London stock brick').position.copy(
-        at((i + 0.5) * brick.width, (j + 0.5) * brick.length, frameTop + rods.diameter / 2 + brick.height / 2),
+      add(londonBrick(brick, i * 7 + j * 3), 'London stock brick').position.copy(
+        at(p + (i + 0.5) * brick.width, p + (j + 0.5) * brick.length, rodZ + rods.diameter / 2),
       );
   return g;
 }
@@ -1055,7 +1103,7 @@ export function renderSteps(design, stepTags) {
   scene.background = new THREE.Color(0xffffff);
   const cam = new THREE.PerspectiveCamera(26, W_PX / H_PX, 1, 50000);
 
-  const flat = { ...design, input: { ...design.input, finish: 'flat', showTop: 'yes' } };
+  const flat = { ...design, input: { ...design.input, finish: 'flat', showTop: 'yes', showBricks: 'yes' } };
   const model = buildModel(flat);
   scene.add(model);
 

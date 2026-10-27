@@ -75,12 +75,12 @@ const TABS = {
   brickbench: {
     form: $('brickbenchConfig'),
     defaults: BRICKBENCH_DEFAULTS,
-    strings: ['profile'],
+    strings: ['profile', 'showBricks'],
     compute: computeBrickbench,
     rows: brickbenchRows,
     steps: brickbenchSteps,
     summary: (d) =>
-      `${d.width} × ${d.depth} mm seat · ${d.parts.bricks} bricks on ${d.parts.rods} rods · ${d.size}${d.size} profile · legs ${d.legLength} mm · sag ${d.check.railSag.toFixed(1)} mm rails under ${d.check.load} kg`,
+      `${d.seatLength} × ${d.seatDepth} mm seat · ${d.parts.bricks} bricks on ${d.parts.rods} rods · ${d.size}${d.size} profile · legs ${d.legLength} mm · sag ${d.check.railSag.toFixed(1)} mm rails under ${d.check.load} kg`,
     total: (d) => `${(d.parts.profileTotal / 1000).toFixed(2)} m of ${d.size}${d.size} profile in total`,
   },
 };
