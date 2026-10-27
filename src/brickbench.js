@@ -91,6 +91,7 @@ export function computeBrickbench(input) {
     check,
     footHeight: FOOT_HEIGHT,
     rods,
+    brick: BRICK,
     parts: {
       cuts,
       profileTotal: cuts.reduce((s, c) => s + c.length * c.qty, 0),

@@ -127,7 +127,7 @@ export function createViewer(container, { onPick } = {}) {
       acrylic.color.set(design.input.color ?? '#202d6a');
       model = buildModel(design);
       scene.add(model);
-      const { width: W, height: H, depth: D } = design.input;
+      const { width: W = design.width, height: H, depth: D = design.depth } = design.input; // the brick bench derives both from its brick counts
       const size = Math.max(W, H);
       ground.scale.set(W * 3, D * 6, 1);
       Object.assign(sun.shadow.camera, { left: -size, right: size, top: size, bottom: -size, far: size * 6 });
@@ -312,6 +312,7 @@ export function shelfRows(design) {
 
 function buildModel(design) {
   if (design.kind === 'desk') return buildDesk(design);
+  if (design.kind === 'brickbench') return buildBrickbench(design);
   const g = new THREE.Group();
   const { input, d, clampSpec, flange, xs, ys, postLength } = design;
   const { width: W, depth: D, thickness: t, finish = 'fluted' } = input;
@@ -923,6 +924,101 @@ function buildDesk(design) {
   return g;
 }
 
+// Brick bench: the desk frame without its top, rod support blocks on the long rails, Ø8 rods
+// lying front to back in the blocks, and the bricks flat on the rods. Same axes as the desk.
+const BRICK_COLOR = '#a4432f';
+// Placeholder size for the rod support block until its real sizes are known (see the design
+// brief): a small box around the rod end, not a measured part.
+const BLOCK_MODEL = { x: 24, y: 16, z: 16 };
+
+function buildBrickbench(design) {
+  const g = new THREE.Group();
+  const { p, size, prof, frameTop, legLength, stretcherZ, footHeight: fh, rods, brick, width: W, depth: D, input } = design;
+  const railZ = frameTop - p; // underside of the top rails
+  const frame = new THREE.MeshPhysicalMaterial({ color: '#949494', metalness: 0.8, roughness: 0.42 });
+  const X = (x) => x - W / 2;
+  const Z = (y) => y - D / 2;
+  const at = (x, y, z) => new THREE.Vector3(X(x), z, Z(y));
+  const name = `${size}${size}`;
+  let tag = '';
+  const add = (o, part, hw = 0) => {
+    const [nb, nn] = Array.isArray(hw) ? hw : [hw, hw];
+    o.userData = { tag, part, hw: [...(nb ? [[prof.bolt, nb]] : []), ...(nn ? [[prof.nut, nn]] : [])] };
+    g.add(o);
+    return o;
+  };
+  const barX = (len, x0, y, z, part) => {
+    const b = add(profileBar(p, len, frame), part);
+    b.rotation.y = Math.PI / 2;
+    b.position.set(X(x0), z + p / 2, Z(y));
+  };
+  const barY = (len, x, y0, z, part) => {
+    const b = add(profileBar(p, len, frame), part);
+    b.position.set(X(x), z + p / 2, Z(y0));
+  };
+  const barZ = (len, x, y, z0, part) => {
+    const b = add(profileBar(p, len, frame), part);
+    b.rotation.x = -Math.PI / 2;
+    b.position.set(X(x), z0, Z(y));
+  };
+  const legs = [[p / 2, p / 2, 1, 1], [W - p / 2, p / 2, -1, 1], [p / 2, D - p / 2, 1, -1], [W - p / 2, D - p / 2, -1, -1]];
+
+  tag = 'shortRails';
+  for (const x of [p / 2, W - p / 2]) {
+    barY(D - 2 * p, x, p, railZ, `Short rail ${name} × ${D - 2 * p} mm`);
+    for (const [y, sy] of [[p, 1], [D - p, -1]])
+      add(orient(gusset(p, p * 0.875, 1, frame, p), [0, sy, 0], [0, 0, -1], at(x, y, railZ)), `2 Hole Inside Corner Gusset ${name}`, 2);
+  }
+
+  tag = 'longRails';
+  for (const y of [p / 2, D - p / 2]) barX(W - 2 * p, p, y, railZ, `Long rail ${name} × ${W - 2 * p} mm`);
+  for (const [x, y, sx] of legs)
+    add(orient(gusset(p * 2, p * 0.875, 2, frame, p), [sx, 0, 0], [0, 0, -1], at(x + (sx * p) / 2, y, railZ)), `4 Hole Inside Corner Gusset ${name}`, 4);
+
+  tag = 'legs';
+  for (const [x, y] of legs) barZ(legLength, x, y, fh, `Leg ${name} × ${legLength} mm`);
+
+  tag = 'endStretchers';
+  for (const x of [p / 2, W - p / 2]) {
+    barY(D - 2 * p, x, p, stretcherZ, `End stretcher ${name} × ${D - 2 * p} mm`);
+    for (const [y, sy] of [[p, 1], [D - p, -1]])
+      add(orient(lBracket(p, p * 0.875, 2.5, frame, p), [0, sy, 0], [0, 0, -1], at(x, y, stretcherZ)), `2 Hole Inside Corner Bracket ${name}`, 2);
+  }
+  tag = 'backStretcher';
+  barX(W - 2 * p, p, D - p / 2, stretcherZ, `Back stretcher ${name} × ${W - 2 * p} mm`);
+  for (const [x, sx] of [[p, 1], [W - p, -1]])
+    add(orient(lBracket(p, p * 0.875, 2.5, frame, p), [sx, 0, 0], [0, 0, -1], at(x, D - p / 2, stretcherZ)), `2 Hole Inside Corner Bracket ${name}`, 2);
+  tag = 'backGussets';
+  for (const [x, , sx] of legs.filter(([, , , sy]) => sy < 0))
+    add(orient(gusset(p * 2, p * 0.875, 2, frame, p), [sx, 0, 0], [0, -1, 0], at(x + (sx * p) / 2, D - p, stretcherZ + p / 2)), `4 Hole Inside Corner Gusset ${name}`, 4);
+
+  tag = 'feet';
+  for (const [x, y] of legs) add(levellingFoot(p), `Levelling foot ${prof.footThread}`).position.copy(at(x, y, 0));
+
+  // the rods: one every half brick along the length, axis level with the top of the rails
+  const rodXs = Array.from({ length: rods.count }, (_, i) => rods.first + i * rods.pitch);
+  tag = 'blocks';
+  for (const x of rodXs)
+    for (const y of [BLOCK_MODEL.y / 2, D - BLOCK_MODEL.y / 2])
+      add(mesh(new THREE.BoxGeometry(BLOCK_MODEL.x, BLOCK_MODEL.z, BLOCK_MODEL.y), alu), 'Rod support block', 2).position.copy(at(x, y, frameTop));
+  tag = 'rods';
+  for (const x of rodXs) {
+    const r = add(rod(rods.diameter, rods.length), `Chrome rod Ø${rods.diameter} × ${rods.length} mm`);
+    r.rotation.x = Math.PI / 2; // lie front to back
+    r.position.copy(at(x, D / 2, frameTop));
+  }
+
+  // bricks flat on the rods, touching
+  tag = 'bricks';
+  const brickMat = new THREE.MeshStandardMaterial({ color: BRICK_COLOR, roughness: 0.92 });
+  for (let i = 0; i < input.bricksLong; i++)
+    for (let j = 0; j < input.rows; j++)
+      add(mesh(new THREE.BoxGeometry(brick.width, brick.height, brick.length), brickMat), 'London stock brick').position.copy(
+        at((i + 0.5) * brick.width, (j + 0.5) * brick.length, frameTop + rods.diameter / 2 + brick.height / 2),
+      );
+  return g;
+}
+
 const TAB_T = 5; // matches TAB_THICKNESS in desk.js
 
 // Which model tags are new in each written desk step (parallel to deskSteps).
@@ -938,6 +1034,11 @@ export function deskStepTags(design) {
     ['top'],
     [],
   ];
+}
+
+// Which model tags are new in each written bench step (parallel to brickbenchSteps).
+export function brickbenchStepTags() {
+  return [['shortRails'], ['longRails'], ['legs'], [], ['endStretchers'], ['backStretcher'], ['backGussets'], ['feet'], ['blocks'], ['rods'], ['bricks'], []];
 }
 
 // --- IKEA-style step pictures ------------------------------------------------------

@@ -14,6 +14,11 @@ export const CATALOG = [
     label: 'Desks & tables',
     pieces: [{ id: 'desk', label: 'Profile desk', blurb: 'T-slot aluminium frame' }],
   },
+  {
+    id: 'seating',
+    label: 'Seating',
+    pieces: [{ id: 'brickbench', label: 'Brick bench', blurb: 'London bricks on chrome rods' }],
+  },
 ];
 
 // The ideas board is a page of its own, outside the groups.
