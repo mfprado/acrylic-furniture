@@ -27,6 +27,14 @@ export const IDEAS = [
       <g fill="#8a8f94"><ellipse cx="42" cy="229" rx="7" ry="2.5"/><ellipse cx="132" cy="229" rx="7" ry="2.5"/><ellipse cx="68" cy="213" rx="7" ry="2.5"/><ellipse cx="158" cy="213" rx="7" ry="2.5"/></g>
     </svg>`,
   },
+  {
+    title: 'Brick stool',
+    points: [
+      'A stool or bench made of London classic red bricks joined with clamps.',
+      'Inspired by glass clamps.',
+    ],
+    issue: 4,
+  },
 ];
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
