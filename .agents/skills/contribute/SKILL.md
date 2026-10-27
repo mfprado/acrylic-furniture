@@ -54,13 +54,14 @@ Check what's already done; skip what is.
 
 1. **Where are we running?** The designer should try the site in their own browser, so
    the session has to run on their computer.
-   - On their computer (the Claude desktop app's **Local** environment, a terminal, or an
+   - On their computer (the Claude desktop app with **This computer** as the environment, a terminal, or an
      editor such as VS Code or Cursor): continue below.
-   - In the cloud (the desktop app's **Cloud** environment, claude.ai/code, Codex cloud):
+   - In the cloud (the desktop app with a **Cloud** environment such as **Default**, claude.ai/code, Codex cloud):
      `localhost` here is the cloud machine, not their computer, so they can't open the site
      in their browser. Explain that in one sentence and help them switch: in the Claude
-     desktop app, open **Code**, start a new session, set the environment selector (under
-     the prompt box) to **Local**, and choose the project folder (step 1.2). If they'd
+     desktop app, open **Code**, start a new session, click the first button under the message box
+     and pick **This computer** (under Local), then click **Choose…** next to it and pick
+     the project folder (step 1.2). If they'd
      rather stay in the cloud, you run the site and show them screenshots instead.
    - **The project isn't on their computer yet** (the folder they chose has no
      `index.html`): download it for them. Ask where to keep it (their Documents folder is

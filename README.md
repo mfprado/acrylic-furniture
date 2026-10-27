@@ -105,7 +105,7 @@ node scripts/serve.mjs        # or: python3 -m http.server 8000
 # http://localhost:8000
 ```
 
-In the Claude desktop app (Code, **Local** environment, this folder), Claude starts it for
+In the Claude desktop app (Code, environment **This computer**, this folder), Claude starts it for
 you from `.claude/launch.json`.
 
 Tests: `node --test`
