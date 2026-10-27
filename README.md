@@ -55,8 +55,11 @@ closing it.
 You don't need to code. Designers are welcome: the AI agent does the programming, you make
 the design decisions.
 
+**New here? Start with the [contributor guide (slides)](docs/contributing-guide.pdf)**: a
+15-slide walkthrough of contributing with the Claude desktop app, from setup to pull request.
+
 1. Fork the repo on GitHub and clone your fork (the agent can help with both).
-2. Start an AI coding agent in the folder (Claude Code, Codex, Cursor, Gemini CLI...) and
+2. Open the folder in an AI coding agent (the Claude desktop app, Claude Code, Codex, Cursor...) and
    say:
 
    ```text
