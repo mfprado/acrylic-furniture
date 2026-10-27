@@ -35,7 +35,7 @@ A bench whose seat is London stock bricks laid flat on Ø8 mm chrome rods, on a 
 - Seat depth is rows × 228 mm: 228 mm by default, up to 684 mm.
 - Two rods under each brick, one near each side of the brick width, running front to back.
 - Each rod is held at both ends by a rod support block bolted to the top of the long rails with T-slot bolts.
-- Profile size uses the same automatic rule as the Profile desk.
+- With profile on auto, the site picks the lightest profile (20, 30 or 40) whose long rails stay within the sag limit (span / 300) under the chosen load.
 - The frame has legs, long and short top rails, low stretchers and levelling feet, as the desk.
 
 ## Warnings

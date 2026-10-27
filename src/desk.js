@@ -28,10 +28,10 @@ export const PROFILES = {
 export const TAB_THICKNESS = 5; // joining plates (3/16") under the rails carry the inset top
 const TAB_SPACING = 300; // joining plates on top of the rails, roughly every 300 mm
 const SHEET_MAX = 2440; // longest standard plywood sheet (8 ft)
-const SAG_LIMIT = 300; // span / 300, usual stiffness limit for a desk top
+export const SAG_LIMIT = 300; // span / 300, usual stiffness limit for a desk top
 // Second moment of area (mm^4) of typical metric T-slot profiles; check your supplier's sheet.
-const PROFILE_I = { 20: 0.7e4, 30: 2.7e4, 40: 9.0e4 };
-const E_ALU = 69000; // MPa
+export const PROFILE_I = { 20: 0.7e4, 30: 2.7e4, 40: 9.0e4 };
+export const E_ALU = 69000; // MPa
 const E_PLY = 7000; // MPa, birch/poplar plywood, bending along the face grain (conservative)
 
 // Same idea as the shelf rod rule: thin for small pieces, heavier as the frame grows.
