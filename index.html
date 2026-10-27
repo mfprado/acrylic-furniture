@@ -100,7 +100,7 @@
     #cutmy { font: 11.5px/1.6 var(--mono); white-space: pre-wrap; margin: 0 0 8px; padding: 10px; background: rgba(255,255,255,0.35); border: 1px solid var(--line); border-radius: 3px; }
     .ghost { width: 100%; padding: 7px; font: 600 10.5px var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: #2c3035; background: transparent; border: 1px solid #2c3035; border-radius: 3px; cursor: pointer; }
     .intro { margin: -6px 0 16px; color: var(--muted); }
-    .intro a { color: inherit; }
+    .intro a, aside [data-for=ideas] a { color: inherit; }
     .hint { color: var(--muted); margin-top: 18px; }
     .donate { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--muted); }
     .donate a { display: block; text-align: center; padding: 8px; font: 600 10.5px var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: #2c3035; border: 1px solid #2c3035; border-radius: 3px; text-decoration: none; }
@@ -115,7 +115,25 @@
     #warnings { color: #8a3a12; padding-left: 18px; }
     #summary, #rodtotal, #holes { color: var(--muted); }
     ol { padding-left: 20px; }
-    @media (max-width: 800px) { main { grid-template-columns: 1fr; height: auto; } aside { order: 2; border-right: 0; } #viewer { height: 60vh; } }
+    /* ideas board, in place of the 3D view */
+    #ideas { height: 100vh; overflow-y: auto; padding: 24px 32px; background: linear-gradient(#fff, #eceef0); }
+    #ideas > h2 { margin-top: 0; }
+    #ideaList { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; align-items: start; }
+    .idea { padding: 16px; background: #fff; border: 1px solid var(--line); border-radius: 3px; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
+    .idea .sketch svg { display: block; width: 100%; height: 220px; margin-bottom: 12px; background: linear-gradient(#f4f4f2, #e8e8e5); border-radius: 3px; }
+    .idea .photo { display: block; width: 100%; max-height: 200px; object-fit: contain; margin-bottom: 12px; }
+    .idea h3 { margin: 0 0 8px; font: 600 14px var(--mono); text-transform: uppercase; letter-spacing: .06em; }
+    .idea ul { margin: 0; padding-left: 18px; }
+    .idea .links { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 12px 0 0; font: 11px var(--mono); }
+    .idea a { color: var(--ink); }
+    .idea .people { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line); font: 11px var(--mono); }
+    .idea .people:empty { display: none; }
+    .idea .people h4 { flex-basis: 100%; margin: 0; font: 600 10px var(--mono); text-transform: uppercase; letter-spacing: .14em; color: var(--muted); }
+    .idea .people a { display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
+    .idea .people img { width: 20px; height: 20px; border-radius: 50%; }
+    .idea .join { display: block; margin-top: 12px; padding: 6px; text-align: center; font: 600 10.5px var(--mono); letter-spacing: .08em; text-transform: uppercase; text-decoration: none; border: 1px solid #2c3035; border-radius: 3px; }
+    .idea .join:hover { background: #2c3035; color: #e9ebed; }
+    @media (max-width: 800px) { main { grid-template-columns: 1fr; height: auto; } aside { order: 2; border-right: 0; } #viewer { height: 60vh; } #ideas { height: auto; padding: 16px; } #ideaList { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -126,6 +144,7 @@
       <nav class="tabs">
         <button type="button" data-tab="shelf" class="tab">Rod shelf</button>
         <button type="button" data-tab="desk" class="tab">Profile desk</button>
+        <button type="button" data-tab="ideas" class="tab">Ideas</button>
       </nav>
       <form id="config" data-for="shelf">
         <label>Width (mm) <input name="width" type="number" min="200" step="10" /></label>
@@ -153,6 +172,11 @@
         <label>Linoleum colour <input name="topColor" type="color" /></label>
         <label>Frame colour <input name="frameColor" type="color" /></label>
       </form>
+      <div data-for="ideas">
+        <p>Ideas for pieces that are not in the configurator yet, as they were suggested. Working out the parts and the build is up to whoever designs one.</p>
+        <p>Have an idea? <a href="https://github.com/mfprado/open-source-modular-furniture/issues/new?template=idea.md">Open an issue on GitHub</a>.</p>
+      </div>
+      <div data-for="shelf desk">
       <button id="download" type="button">Download spec (PDF)</button>
       <button id="reset" type="button" class="ghost" style="margin-top:8px">Reset to defaults</button>
       <ul id="warnings"></ul>
@@ -168,12 +192,17 @@
       <button id="copycutmy" type="button" class="ghost">Copy order details</button>
       </div>
       <p class="hint">Step-by-step assembly instructions are in the PDF.</p>
+      </div>
       <footer class="donate">
         <p>Free and open source. If it helped you build something, you can buy me a coffee.</p>
         <a href="https://cafecito.app/mfprado" target="_blank" rel="noopener">☕ Support on Cafecito</a>
       </footer>
     </aside>
-    <section id="viewer">
+    <section id="ideas" data-for="ideas">
+      <h2>Ideas board</h2>
+      <div id="ideaList"></div>
+    </section>
+    <section id="viewer" data-for="shelf desk">
       <div id="partInfo" class="part-info" role="dialog" aria-modal="false" aria-labelledby="partTitle" hidden>
         <button type="button" class="close" aria-label="Close">×</button>
         <h3 id="partTitle"></h3>

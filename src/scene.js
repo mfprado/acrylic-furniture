@@ -42,6 +42,7 @@ export function createViewer(container, { onPick } = {}) {
 
   function resize() {
     const { clientWidth: w, clientHeight: h } = container;
+    if (!w || !h) return; // hidden behind the ideas tab: keep the last size, not a 0/0 aspect
     renderer.setSize(w, h);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
@@ -119,6 +120,7 @@ export function createViewer(container, { onPick } = {}) {
       return { url: out.toDataURL('image/jpeg', 0.88), w: out.width, h: out.height };
     },
     show(design, { keepCamera = false } = {}) {
+      resize(); // the container may have just been unhidden, before the observer fires
       scene.remove(model);
       outline.visible = false;
       label.hidden = true;
