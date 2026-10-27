@@ -173,8 +173,9 @@ Chrome, then give them this list one item at a time and wait for their answer to
 8. Check the Rod shelf and Profile desk pages still work.
 9. Make the Chrome window narrow, like a phone. Is it still usable?
 
-When something's wrong, fix it, tell them to refresh, and ask again. When they're happy,
-do your own checks and keep the evidence for the PR:
+When something's wrong, fix it, tell them to refresh, and ask again. When they're happy
+(they'll often say "I'm happy, let's send it"), do your own checks and keep the evidence for
+the PR:
 
 1. `node --test`. Every test passes. Keep the output.
 2. Screenshots in `pr-screenshots/`:

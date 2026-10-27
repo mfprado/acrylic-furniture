@@ -64,8 +64,10 @@ closing it.
 You don't need to code. Designers are welcome: the AI agent does the programming, you make
 the design decisions.
 
-**New here? Start with the [contributor guide (slides)](docs/contributing-guide.pdf)**: a
-walkthrough of contributing with the Claude desktop app, from setup to pull request.
+**New here? Start with the contributor guide slides**
+([Google Slides](https://docs.google.com/presentation/d/1I9-3j3nR0PeYaLsFDj4lVqFOk5Pe61Ug/edit) ·
+[PDF](docs/contributing-guide.pdf)): a walkthrough of contributing with the Claude desktop
+app, from opening the project to the pull request.
 
 1. Fork the repo on GitHub and clone your fork (the agent can help with both).
 2. Open the folder in an AI coding agent (the Claude desktop app, Claude Code, Codex, Cursor...) and
