@@ -91,8 +91,21 @@ python3 -m http.server 8000   # or: npx serve -l 8000
 
 Run it in the background (or in a second terminal if your agent can't), then:
 
-- **On their computer:** tell them to open http://localhost:8000. "This is the site
-  running on your computer. Only you can see it. It updates when you refresh."
+- **On their computer:** explain what a local version is, then have them open it. Say
+  something like:
+
+  > I've started a private copy of the website on your computer. Think of it as a
+  > prototype on your workbench: the real site (mfprado.github.io/…) is the shop window
+  > everyone sees, and this copy is yours to try things on. Nobody else can see it, and
+  > nothing you do here changes the real site.
+  >
+  > To open it: open Chrome, click the address bar at the top, type `localhost:8000` and
+  > press Enter. `localhost` means "this computer", and 8000 is just the door number I
+  > opened it on. When I change something, press Cmd+R (Mac) or Ctrl+R (Windows) to
+  > refresh and see it. Keep this chat open: if you close it, the copy stops and the
+  > page shows "This site can't be reached". Just ask me to start it again.
+
+  Wait until they say they can see it.
 - **In the cloud:** they can't open localhost. Take a screenshot (below) and show it.
 
 Run the tests once now so you know they pass before anything changes: `node --test`.
@@ -144,9 +157,24 @@ Rules for any change:
 - Keep the change to what was agreed. Ideas for other changes go in a list for the PR's
   *Next steps*.
 
-## 4. Check it before sending
+## 4. They try it in Chrome, then you check it
 
-Do all of these and keep the evidence for the PR:
+First the designer uses it themselves, the way someone visiting the site would. Make
+sure the local version is running (step 2), remind them it's at `localhost:8000` in
+Chrome, then give them this list one item at a time and wait for their answer to each:
+
+1. Open the new or changed tab. Does the 3D view look like the piece?
+2. Change the sizes to the smallest and the largest. Does it still look right?
+3. Switch each option on and off.
+4. Try to make each warning appear (too wide, too heavy…). Does the warning make sense?
+5. Click a few parts in the 3D view. Is the description right?
+6. Read the parts list. Is it what you'd buy?
+7. Click **Download spec (PDF)** and read it. Could someone build it from this?
+8. Check the Rod shelf and Profile desk tabs still work.
+9. Make the Chrome window narrow, like a phone. Is it still usable?
+
+When something's wrong, fix it, tell them to refresh, and ask again. When they're happy,
+do your own checks and keep the evidence for the PR:
 
 1. `node --test`. Every test passes. Keep the output.
 2. Screenshots in `pr-screenshots/`:
@@ -161,8 +189,8 @@ Do all of these and keep the evidence for the PR:
 5. Read your own diff (`git diff upstream/main`) as the reviewer would: anything
    unexplained, unused, or not in the brief? Fix it.
 
-Show the screenshots to the designer and ask: "Is this what you wanted? Anything to change
-before we send it?"
+Show the screenshots to the designer and ask: "These go in the pull request. Anything to
+change before we send it?"
 
 ## 5. Send it (the pull request)
 
