@@ -34,6 +34,12 @@ export const IDEAS = [
       'Inspired by glass clamps.',
     ],
     issue: 4,
+    // drawn from the request: a single classic London red brick
+    sketch: `<svg viewBox="0 0 200 240" role="img" aria-label="Sketch: a single classic red brick">
+      <polygon points="20,125 150,125 185,97 55,97" fill="#c9694f" stroke="#8a3a29"/>
+      <polygon points="150,125 185,97 185,145 150,173" fill="#9a432f" stroke="#8a3a29"/>
+      <rect x="20" y="125" width="130" height="48" fill="#b5523b" stroke="#8a3a29"/>
+    </svg>`,
   },
 ];
 
