@@ -63,13 +63,14 @@ Check what's already done; skip what is.
      and pick **This computer** (under Local), then click **Choose…** next to it and pick
      the project folder (step 1.2). If they'd
      rather stay in the cloud, you run the site and show them screenshots instead.
-   - **The project isn't on their computer yet** (the folder they chose has no
-     `index.html`): download it for them. Ask where to keep it (their Documents folder is
-     a good default), run `git clone https://github.com/mfprado/open-source-modular-furniture.git`
-     there, then tell them: "Done. From now on, start each session with the folder
-     *open-source-modular-furniture* in your Documents. Start a new session with that
-     folder now and say *let's work on this* again." Stop there; the skills load from that
-     folder.
+   - **The project isn't on their computer yet** (the usual first time: they chose a
+     folder such as Documents and asked you to clone the repository): clone it there with
+     `git clone https://github.com/mfprado/open-source-modular-furniture.git`, then keep
+     working inside the clone in this same session: run every command from that folder,
+     and read its `AGENTS.md` and this skill from there. Tell them: "Downloaded. Next
+     time, click **Choose…**, pick the folder *open-source-modular-furniture* in your
+     Documents and say *let's work on this*." Then carry on: ask what they want (step 0)
+     if you haven't yet, and start the site (step 2).
 2. **Tools.** Check `git --version` and `node --version` (Node 18 or later: it runs the
    site and the tests). If something is missing, give the one installer link they need
    (https://nodejs.org for Node; https://git-scm.com for Git on Windows; on a Mac,

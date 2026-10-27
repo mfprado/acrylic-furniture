@@ -69,14 +69,17 @@ the design decisions.
 [PDF](docs/contributing-guide.pdf)): a walkthrough of contributing with the Claude desktop
 app, from opening the project to the pull request.
 
-1. Fork the repo on GitHub and clone your fork (the agent can help with both).
-2. Open the folder in an AI coding agent (the Claude desktop app, Claude Code, Codex, Cursor...) and
-   say:
+1. In the Claude desktop app, open **Code**, pick **This computer** as the environment
+   and **Choose…** a folder such as Documents. (Other AI coding agents work too: Claude
+   Code, Codex, Cursor…)
+2. Say:
 
    ```text
-   let's work on this
+   I want to work on this repository https://github.com/mfprado/open-source-modular-furniture. Clone it and let's start working there.
    ```
 
+   Next time, choose the `open-source-modular-furniture` folder and just say
+   `let's work on this`.
 3. It follows `.agents/skills/contribute/SKILL.md`: it gets the site running on your
    computer, asks what you want to do, and builds it with you in small steps, showing a
    screenshot after each one. For a new piece it first writes a design brief with you
