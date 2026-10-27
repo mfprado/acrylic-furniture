@@ -4,6 +4,7 @@ import { partInfo } from './partinfo.js';
 import { createViewer, renderParts, renderSteps, shelfStepTags, deskStepTags } from './scene.js';
 import { downloadSpec } from './pdf.js';
 import { IDEAS, ideaCard, loadPeople } from './ideas.js';
+import { IDEAS_PAGE, findPiece, navHtml } from './catalog.js';
 
 const viewer = createViewer(document.querySelector('#viewer'), { onPick: showPart });
 
@@ -46,7 +47,7 @@ const $ = (id) => document.getElementById(id);
 $('partInfo').querySelector('.close').addEventListener('click', () => ($('partInfo').hidden = true));
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('partInfo').hidden = true; });
 
-// One entry per furniture type. Each tab keeps its own form, saved settings and camera.
+// One entry per piece in the catalog (src/catalog.js), by the same id. Each tab keeps its own form, saved settings and camera.
 const TABS = {
   shelf: {
     form: $('config'),
@@ -112,9 +113,34 @@ TABS.shelf.form.elements.material.addEventListener('change', syncMaterial);
 // The ideas tab is a board, not a configurator: no form, no 3D view.
 $('ideaList').innerHTML = IDEAS.map(ideaCard).join('');
 document.querySelectorAll('#ideaList .people').forEach(loadPeople);
-const isTab = (name) => name in TABS || name === 'ideas';
+const isTab = (name) => name in TABS || name === IDEAS_PAGE;
 
-let tab = isTab(read(TAB_KEY)) ? read(TAB_KEY) : 'shelf';
+// Top bar: a menu per furniture type. The page is in the URL hash so it can be linked to;
+// without one, open the page used last.
+$('topnav').innerHTML = navHtml();
+const menus = [...document.querySelectorAll('.menu')];
+function closeMenus(except) {
+  for (const m of menus) {
+    if (m === except) continue;
+    m.querySelector('.menu-button').setAttribute('aria-expanded', 'false');
+    m.querySelector('.menu-list').hidden = true;
+  }
+}
+for (const m of menus) {
+  m.querySelector('.menu-button').addEventListener('click', (e) => {
+    const open = e.currentTarget.getAttribute('aria-expanded') !== 'true';
+    closeMenus(m);
+    e.currentTarget.setAttribute('aria-expanded', String(open));
+    m.querySelector('.menu-list').hidden = !open;
+  });
+}
+document.addEventListener('click', (e) => { if (!e.target.closest('.menu')) closeMenus(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenus(); });
+document.querySelectorAll('#topnav a').forEach((a) => a.addEventListener('click', () => closeMenus()));
+const fromHash = () => location.hash.slice(1);
+window.addEventListener('hashchange', () => { if (isTab(fromHash())) showTab(fromHash()); });
+
+let tab = [fromHash(), read(TAB_KEY)].find(isTab) ?? 'shelf';
 const framed = {};
 let current = null;
 
@@ -122,7 +148,15 @@ function showTab(name) {
   tab = name;
   write(TAB_KEY, name);
   document.querySelectorAll('[data-for]').forEach((el) => (el.hidden = !el.dataset.for.split(' ').includes(name)));
-  document.querySelectorAll('.tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
+  if (fromHash() !== name) history.replaceState(null, '', `#${name}`);
+  const found = findPiece(name);
+  $('crumb').textContent = found ? found.group.label : '';
+  $('pageTitle').textContent = found ? found.piece.label : 'Ideas';
+  document.querySelectorAll('#topnav [data-page]').forEach((a) => {
+    if (a.dataset.page === name) a.setAttribute('aria-current', 'page');
+    else a.removeAttribute('aria-current');
+  });
+  menus.forEach((m) => m.classList.toggle('current', m.dataset.group === found?.group.id));
   if (!TABS[name]) return;
   framed[name] = null; // re-frame when switching furniture
   render();
@@ -215,7 +249,6 @@ for (const sel of document.querySelectorAll('form select')) {
   sync();
 }
 const syncSwitches = () => switches.forEach((s) => s());
-document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));
 $('reset').addEventListener('click', () => {
   try { localStorage.removeItem(storeKey(tab)); } catch { /* ignore */ }
   fill(TABS[tab].form, TABS[tab].defaults);
