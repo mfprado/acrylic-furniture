@@ -419,7 +419,7 @@ export function renderParts(design) {
     return { url, w: W_PX, h: H_PX };
   };
 
-  if (design.kind === 'desk') {
+  if (design.kind === 'desk' || design.kind === 'brickbench') {
     const { p, input } = design;
     const frame = new THREE.MeshPhysicalMaterial({ color: input.frameColor ?? '#949494', metalness: 0.8, roughness: 0.42 });
     const bar = profileBar(p, p * 4, frame);
@@ -439,6 +439,12 @@ export function renderParts(design) {
       tab: shot(mountingTab(p, 5, frame, p * 0.35), new THREE.Vector3(0.6, 0.9, 1.2)),
       hiddenConnector: shot(hiddenConnector(p, frame), new THREE.Vector3(0.8, 0.7, 1.2)),
     };
+    if (design.kind === 'brickbench') {
+      const rodPiece = rod(design.rods.diameter, design.rods.diameter * 30);
+      rodPiece.rotation.z = Math.PI / 3;
+      out.rod = shot(rodPiece, new THREE.Vector3(0, 0.3, 1));
+      out.brick = shot(londonBrick(design.brick, 3), new THREE.Vector3(0.5, 1.1, 1.2));
+    }
     pmrem.dispose();
     r.dispose();
     r.forceContextLoss();
