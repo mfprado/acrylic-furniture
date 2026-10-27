@@ -118,16 +118,14 @@
     /* ideas board, in place of the 3D view */
     #ideas { height: 100vh; overflow-y: auto; padding: 24px 32px; background: linear-gradient(#fff, #eceef0); }
     #ideas > h2 { margin-top: 0; }
-    #ideaList { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 16px; }
-    .idea { display: grid; grid-template-columns: 120px 1fr; gap: 16px; padding: 16px; background: #fff; border: 1px solid var(--line); border-radius: 3px; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
-    .idea .sketch svg { width: 120px; height: 140px; }
-    .idea h3 { margin: 4px 0 6px; font: 600 14px var(--mono); text-transform: uppercase; letter-spacing: .06em; }
-    .idea h4 { margin: 12px 0 4px; font: 600 10.5px var(--mono); text-transform: uppercase; letter-spacing: .14em; color: var(--muted); }
-    .idea p { margin: 0; }
+    #ideaList { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; align-items: start; }
+    .idea { padding: 16px; background: #fff; border: 1px solid var(--line); border-radius: 3px; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
+    .idea .photo { display: block; width: 100%; max-height: 200px; object-fit: contain; margin-bottom: 12px; }
+    .idea h3 { margin: 0 0 8px; font: 600 14px var(--mono); text-transform: uppercase; letter-spacing: .06em; }
     .idea ul { margin: 0; padding-left: 18px; }
+    .idea .links { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 12px 0 0; font: 11px var(--mono); }
     .idea a { color: var(--ink); }
-    .idea .status { font: 600 10px var(--mono); text-transform: uppercase; letter-spacing: .1em; padding: 2px 6px; border: 1px solid var(--muted); border-radius: 3px; color: var(--muted); }
-    @media (max-width: 800px) { main { grid-template-columns: 1fr; height: auto; } aside { order: 2; border-right: 0; } #viewer { height: 60vh; } #ideas { height: auto; padding: 16px; } #ideaList { grid-template-columns: 1fr; } .idea { grid-template-columns: 1fr; } }
+    @media (max-width: 800px) { main { grid-template-columns: 1fr; height: auto; } aside { order: 2; border-right: 0; } #viewer { height: 60vh; } #ideas { height: auto; padding: 16px; } #ideaList { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -167,8 +165,8 @@
         <label>Frame colour <input name="frameColor" type="color" /></label>
       </form>
       <div data-for="ideas">
-        <p>Pieces built the same way, from cheap standard parts, that are not in the configurator yet. Each one needs its parts measured and its build worked out before it gets its own tab.</p>
-        <p>Have an idea? <a href="https://github.com/mfprado/open-source-modular-furniture/issues">Open an issue on GitHub</a>.</p>
+        <p>Ideas for pieces that are not in the configurator yet, as they were suggested. Working out the parts and the build is up to whoever designs one.</p>
+        <p>Have an idea? <a href="https://github.com/mfprado/open-source-modular-furniture/issues/new?template=idea.md">Open an issue on GitHub</a>.</p>
       </div>
       <div data-for="shelf desk">
       <button id="download" type="button">Download spec (PDF)</button>
