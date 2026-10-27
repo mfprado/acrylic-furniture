@@ -12,6 +12,9 @@ preview.
 <img width="1491" height="702" alt="Screenshot 2026-10-25 at 10 21 01" src="https://github.com/user-attachments/assets/8ebafba1-bb89-4ac9-928b-7aada4f8760e" />
 <img width="1316" height="739" alt="Screenshot 2026-10-25 at 10 20 23" src="https://github.com/user-attachments/assets/1b1c4d9c-d27e-47c1-ba62-1e0e6279a9f3" />
 
+The profile desk is based on the open source Profile Desk Frame by Palmer Purcell (CPlot,
+[@c.plot_ on Instagram](https://www.instagram.com/c.plot_/)).
+
 ## Site layout
 
 The top bar groups the pieces by furniture type (Shelving, Desks & tables, …), one menu per
