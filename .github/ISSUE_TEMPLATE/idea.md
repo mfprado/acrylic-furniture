@@ -9,4 +9,4 @@ labels: idea
 <!-- A sentence or a few bullet points. No need to work out parts or assembly. -->
 
 **Inspiration**
-<!-- Optional: links or pictures of what inspired it. -->
+<!-- Optional: links, and pictures of what it should look like. A picture of the goal gets turned into a sketch on the board. -->

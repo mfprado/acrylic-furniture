@@ -39,10 +39,12 @@ what goes on one. To run it with [Claude Code](https://claude.com/claude-code):
    ```
 
    or just ask: `add the idea from issue #12 to the board`.
-3. Claude reads the issue, adds the entry to `src/ideas.js`, runs `node --test`, takes a
-   screenshot of the board and opens a PR that references the issue (`Refs #12`, never
-   `Closes`, so the issue stays open).
-4. Review the card wording against the issue and merge.
+3. Claude reads the issue, adds the entry to `src/ideas.js`, draws a sketch if the issue
+   has a picture of the goal (for example "a square lamp like this" plus a photo), runs
+   `node --test`, takes a screenshot of the board and opens a PR that references the
+   issue (`Refs #12`, never `Closes`, so the issue stays open).
+4. Review the card wording against the issue, and the sketch against the picture, then
+   merge.
 
 Without Claude Code, follow the same rules by hand: copy an entry in `src/ideas.js`,
 keep the proposer's words, add `issue`, and reference the issue in the PR without
