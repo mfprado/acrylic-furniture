@@ -1,6 +1,6 @@
 # Open Source Modular Furniture
 
-An open source furniture project: Lego for adults. Standard off-the-shelf parts, sized to
+An open source furniture project. Standard off-the-shelf parts, sized to
 your space, with everything you need to buy and build them.
 
 Live: https://mfprado.github.io/open-source-modular-furniture/
@@ -136,5 +136,5 @@ Tests: `node --test`
 
 ## Support
 
-This project is free and open source. If it helped you build something, you can
-[buy me a coffee on Cafecito](https://cafecito.app/mfprado).
+This project is free and open source. If it helped you build something, buy the maintainers a coffee on
+[Cafecito](https://cafecito.app/mfprado).

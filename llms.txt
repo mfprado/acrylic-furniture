@@ -1,0 +1,17 @@
+# Open Source Modular Furniture
+
+> Open source furniture you design and build yourself: Lego for adults. Standard off-the-shelf parts (rods, profiles, clamps, sheets) sized to your space. Free web configurator with parts list, cut list, 3D preview and PDF build guide. No sign-up.
+
+Live site: https://mfprado.github.io/open-source-modular-furniture/
+Code and license: https://github.com/mfprado/open-source-modular-furniture
+
+## Pieces
+
+- Rod shelf: chrome linear shaft rods and cross clamps with acrylic, plywood, MDF, OSB or MFC shelves. https://mfprado.github.io/open-source-modular-furniture/#shelf
+- Profile desk: T-slot aluminium extrusion (2020, 3030, 4040) desk frame with a top. https://mfprado.github.io/open-source-modular-furniture/#desk
+- Ideas board: proposed pieces open for contributors. https://mfprado.github.io/open-source-modular-furniture/#ideas
+
+## For contributors and agents
+
+- Static site, no build step: `index.html` plus ES modules in `src/`. Run `node scripts/serve.mjs`, test with `node --test`.
+- Agent instructions: https://github.com/mfprado/open-source-modular-furniture/blob/main/AGENTS.md

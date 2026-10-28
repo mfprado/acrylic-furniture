@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://mfprado.github.io/open-source-modular-furniture/sitemap.xml
