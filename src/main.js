@@ -46,6 +46,15 @@ function showPart(name, names) {
 const $ = (id) => document.getElementById(id);
 $('partInfo').querySelector('.close').addEventListener('click', () => ($('partInfo').hidden = true));
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('partInfo').hidden = true; });
+// A click anywhere outside the box closes it; a drag (orbiting the 3D view) doesn't. This runs
+// before the viewer's own click, so clicking another part closes this box and opens that one.
+let pressAt = null;
+document.addEventListener('pointerdown', (e) => (pressAt = [e.clientX, e.clientY]), true);
+document.addEventListener('pointerup', (e) => {
+  const box = $('partInfo');
+  if (box.hidden || !pressAt || box.contains(e.target)) return;
+  if (Math.hypot(e.clientX - pressAt[0], e.clientY - pressAt[1]) <= 4) box.hidden = true;
+}, true);
 
 // One entry per piece in the catalog (src/catalog.js), by the same id. Each tab keeps its own form, saved settings and camera.
 const TABS = {
