@@ -9,8 +9,9 @@ Calculator for minimalist rod and acrylic shelf units in the style of the HushLu
 3 tier keyboard stand. Enter width, depth, total height and number of shelves; get a
 parts list, hole positions for the acrylic, assembly steps with clamp heights, and a 3D
 preview.
-<img width="1491" height="702" alt="Screenshot 2026-10-25 at 10 21 01" src="https://github.com/user-attachments/assets/8ebafba1-bb89-4ac9-928b-7aada4f8760e" />
-<img width="1316" height="739" alt="Screenshot 2026-10-25 at 10 20 23" src="https://github.com/user-attachments/assets/1b1c4d9c-d27e-47c1-ba62-1e0e6279a9f3" />
+![Rod shelf configurator: settings on the left, 3D view in the middle, Your build panel on the right](docs/screenshot-rod-shelf.png)
+![Profile desk in the same layout](docs/screenshot-profile-desk.png)
+![Drawing view: the desk as a technical drawing with dimension lines](docs/screenshot-drawing-view.png)
 
 The profile desk is based on the open source Profile Desk Frame by Palmer Purcell (CPlot,
 [@c.plot_ on Instagram](https://www.instagram.com/c.plot_/)).

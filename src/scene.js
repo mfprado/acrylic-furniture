@@ -4,6 +4,10 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 const chrome = new THREE.MeshPhysicalMaterial({ color: 0xe6e8eb, metalness: 1, roughness: 0.08 });
 const alu = new THREE.MeshPhysicalMaterial({ color: 0xcfd3d7, metalness: 0.85, roughness: 0.38 });
+// Clear anodised T-slot profile: the same fully metallic base as the chrome rods, but satin
+// (rougher) under a thin clear coat, so it reads as aluminium rather than painted grey.
+const profileMaterial = (color = '#c4c8cc') =>
+  new THREE.MeshPhysicalMaterial({ color, metalness: 1, roughness: 0.3, clearcoat: 0.4, clearcoatRoughness: 0.25 });
 const dark = new THREE.MeshStandardMaterial({ color: 0x1a1a1c, metalness: 0.5, roughness: 0.5 });
 const acrylic = new THREE.MeshPhysicalMaterial({
   color: 0x202d6a, metalness: 0, roughness: 0.18, transmission: 0.9, thickness: 8, ior: 1.49,
@@ -53,7 +57,90 @@ export function createViewer(container, { onPick } = {}) {
   renderer.setAnimationLoop(() => {
     controls.update();
     renderer.render(scene, camera);
+    placeDimLabels();
   });
+
+  // Drawing look: white parts with dark edges and dimension lines; Realistic is the render.
+  // Original materials are kept on each mesh so switching back (and the PDF snapshot) is exact.
+  let look = 'realistic';
+  const edgeMat = new THREE.LineBasicMaterial({ color: 0x15171a });
+  const paper = new THREE.MeshBasicMaterial({ color: 0xffffff, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+  const glass = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide });
+  let dims = new THREE.Group();
+  scene.add(dims);
+  let dimLabels = [];
+  const tmp = new THREE.Vector3();
+
+  function applyLook() {
+    const drawing = look === 'drawing';
+    container.classList.toggle('drawing', drawing);
+    ground.visible = !drawing;
+    dims.visible = drawing;
+    for (const l of dimLabels) l.el.hidden = !drawing;
+    model.traverse((o) => {
+      if (!o.isMesh || Array.isArray(o.material)) return;
+      o.userData.real ??= o.material;
+      o.material = drawing ? (o.userData.real.transparent ? glass : paper) : o.userData.real;
+      if (drawing && !o.userData.edges) {
+        const e = new THREE.LineSegments(new THREE.EdgesGeometry(o.geometry, 25), edgeMat);
+        e.raycast = () => {};
+        o.add(e);
+        o.userData.edges = e;
+      }
+      if (o.userData.edges) o.userData.edges.visible = drawing;
+    });
+  }
+
+  // Width along the front foot, height up the front left, depth along the right foot.
+  function buildDims(input) {
+    scene.remove(dims);
+    for (const l of dimLabels) l.el.remove();
+    dimLabels = [];
+    dims = new THREE.Group();
+    scene.add(dims);
+    const box = new THREE.Box3().setFromObject(model);
+    const size = box.getSize(new THREE.Vector3());
+    const gap = Math.max(size.x, size.y, size.z) * 0.07;
+    const tick = gap * 0.35;
+    const mm = (measured, wanted) => Math.round(Math.abs(measured - wanted) > wanted * 0.03 ? measured : wanted);
+    const line = (a, b, text, tickDir) => {
+      const pts = [a, b, a.clone().addScaledVector(tickDir, tick), a.clone().addScaledVector(tickDir, -tick), b.clone().addScaledVector(tickDir, tick), b.clone().addScaledVector(tickDir, -tick)];
+      const geo = new THREE.BufferGeometry().setFromPoints(pts);
+      geo.setIndex([0, 1, 2, 3, 4, 5]);
+      dims.add(new THREE.LineSegments(geo, edgeMat));
+      const el = Object.assign(document.createElement('div'), { className: 'dim', textContent: `${text} mm` });
+      container.appendChild(el);
+      dimLabels.push({ el, at: a.clone().add(b).multiplyScalar(0.5) });
+    };
+    const V = (x, y, z) => new THREE.Vector3(x, y, z);
+    const front = box.max.z + gap;
+    line(V(box.min.x, box.min.y, front), V(box.max.x, box.min.y, front), mm(size.x, input.width), V(0, 1, 0));
+    line(V(box.min.x - gap, box.min.y, box.max.z), V(box.min.x - gap, box.max.y, box.max.z), mm(size.y, input.height), V(1, 0, 0));
+    line(V(box.max.x + gap, box.min.y, box.min.z), V(box.max.x + gap, box.min.y, box.max.z), mm(size.z, input.depth), V(0, 1, 0));
+  }
+
+  function placeDimLabels() {
+    if (look !== 'drawing' || !dimLabels.length) return;
+    const w = container.clientWidth;
+    const h = container.clientHeight;
+    for (const l of dimLabels) {
+      tmp.copy(l.at).project(camera);
+      l.el.hidden = tmp.z > 1;
+      l.el.style.left = `${((tmp.x + 1) / 2) * w}px`;
+      l.el.style.top = `${((1 - tmp.y) / 2) * h}px`;
+    }
+  }
+
+  // Put the camera on a side of the model, far enough to fit the whole of it.
+  const VIEWS = { '3d': [0.62, 0.42, 0.9], front: [0, 0, 1], side: [1, 0, 0], top: [0, 1, 0.02] };
+  function frame(view = '3d') {
+    const box = new THREE.Box3().setFromObject(model);
+    const sphere = box.getBoundingSphere(new THREE.Sphere());
+    sphere.radius += Math.max(...box.getSize(new THREE.Vector3()).toArray()) * 0.1; // room for the dimension lines
+    const fit = sphere.radius / Math.sin(THREE.MathUtils.degToRad(camera.fov / 2)) / Math.min(1, camera.aspect);
+    controls.target.copy(sphere.center);
+    camera.position.copy(sphere.center).addScaledVector(new THREE.Vector3(...(VIEWS[view] ?? VIEWS['3d'])).normalize(), fit * 1.02);
+  }
 
   // Hover a part to outline it and see its name; click (without dragging) to open its info.
   const ray = new THREE.Raycaster();
@@ -108,6 +195,9 @@ export function createViewer(container, { onPick } = {}) {
 
   return {
     snapshot() {
+      // the PDF always gets the realistic render
+      const was = look;
+      if (was !== 'realistic') { look = 'realistic'; applyLook(); }
       renderer.render(scene, camera);
       // Flatten the transparent canvas onto white and downscale, so the PDF stays small.
       const src = renderer.domElement;
@@ -117,7 +207,15 @@ export function createViewer(container, { onPick } = {}) {
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, out.width, out.height);
       ctx.drawImage(src, 0, 0, out.width, out.height);
+      if (was !== 'realistic') { look = was; applyLook(); }
       return { url: out.toDataURL('image/jpeg', 0.88), w: out.width, h: out.height };
+    },
+    setLook(name) {
+      look = name;
+      applyLook();
+    },
+    setView(name) {
+      frame(name);
     },
     show(design, { keepCamera = false } = {}) {
       resize(); // the container may have just been unhidden, before the observer fires
@@ -133,12 +231,11 @@ export function createViewer(container, { onPick } = {}) {
       Object.assign(sun.shadow.camera, { left: -size, right: size, top: size, bottom: -size, far: size * 6 });
       sun.shadow.camera.updateProjectionMatrix();
       sun.position.set(size * 0.6, size * 2, size * 1.2);
+      buildDims(design.input);
+      applyLook();
       if (keepCamera) return;
       // Fit the whole model in view from a three-quarter angle, whatever its proportions.
-      const sphere = new THREE.Box3().setFromObject(model).getBoundingSphere(new THREE.Sphere());
-      const fit = sphere.radius / Math.sin(THREE.MathUtils.degToRad(camera.fov / 2)) / Math.min(1, camera.aspect);
-      controls.target.copy(sphere.center);
-      camera.position.copy(sphere.center).addScaledVector(new THREE.Vector3(0.62, 0.42, 0.9).normalize(), fit * 1.02);
+      frame('3d');
     },
   };
 }
@@ -420,7 +517,7 @@ export function renderParts(design) {
 
   if (design.kind === 'desk') {
     const { p, input } = design;
-    const frame = new THREE.MeshPhysicalMaterial({ color: input.frameColor ?? '#949494', metalness: 0.8, roughness: 0.42 });
+    const frame = profileMaterial(input.frameColor);
     const bar = profileBar(p, p * 4, frame);
     const nut = tNut(p);
     nut.scale.setScalar(3);
@@ -790,7 +887,7 @@ function buildDesk(design) {
   const g = new THREE.Group();
   const { input, p, size, prof, railZ, legLength, stretcherZ, withStretchers, midRail, footHeight: fh, parts } = design;
   const { width: W, depth: D, topThickness: tt } = input;
-  const frame = new THREE.MeshPhysicalMaterial({ color: input.frameColor ?? '#949494', metalness: 0.8, roughness: 0.42 });
+  const frame = profileMaterial(input.frameColor);
   const X = (x) => x - W / 2;
   const Z = (y) => y - D / 2;
   const at = (x, y, z) => new THREE.Vector3(X(x), z, Z(y));
@@ -916,7 +1013,7 @@ function buildDesk(design) {
     const ply = add(mesh(new THREE.BoxGeometry(tw, lino ? tt - 2 : tt, td), wood), `Plywood top ${tw} × ${td} mm`);
     ply.position.set(cx, topZ + (lino ? (tt - 2) / 2 : tt / 2), 0);
     if (lino) {
-      const sheetL = add(mesh(new THREE.BoxGeometry(tw, 2, td), new THREE.MeshStandardMaterial({ color: input.topColor ?? '#c9b8a3', roughness: 0.9 })), 'Linoleum');
+      const sheetL = add(mesh(new THREE.BoxGeometry(tw, 2, td), new THREE.MeshStandardMaterial({ color: input.topColor ?? '#171353', roughness: 0.9 })), 'Linoleum');
       sheetL.position.set(cx, topZ + tt - 1, 0);
     }
   }

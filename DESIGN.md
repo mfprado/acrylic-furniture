@@ -27,7 +27,7 @@ Defined as custom properties on `:root` in `index.html`. Use the variable, not t
 | `--muted` | `#5b6168` | Secondary text, section headings, hints, crumbs |
 | `--line` | `rgba(0,0,0,0.12)` | Hairline dividers, table rows, card borders |
 | `--bg` | `#f7f7f5` | Page background |
-| `--chrome` | brushed aluminium gradient | Sidebar, dropdown menus, part info box |
+| `--chrome` | brushed aluminium gradient | Dropdown menus, part info box |
 
 Fixed colours used alongside the tokens:
 
@@ -73,7 +73,7 @@ colour) belongs to the furniture, not the interface.
 
 ## Surfaces and depth
 
-- **Brushed metal** (`--chrome`) is for panels that hold controls. Plain white (`#fff`) is for
+- **Brushed metal** (`--chrome`) is for floating menus and the part info box. Plain white (`#fff`) is for
   content: idea cards, part photos, the 3D viewer's light gradient (`#fff` to `#eceef0`).
 - Edges look machined: a 1px darker border plus a 1px white inner highlight
   (`box-shadow: inset ... rgba(255,255,255,0.35)`) on the sidebar and section headings.
@@ -81,8 +81,8 @@ colour) belongs to the furniture, not the interface.
   for menu items. No pill shapes except the on/off switch.
 - **Flat panels** are where the site is heading: white cards with a hairline border on the
   light grey `--ground`, corners of `--radius` (6px), 8px for a large render frame. The home
-  page uses them. The configurator keeps the brushed metal sidebar until it moves over
-  (see *Where it's heading*); don't mix the two on one page.
+  page uses them. Piece pages use them too. Brushed metal (`--chrome`) is
+  now only for the menus and the part info box; don't mix it with flat panels on one page.
 - Shadows are soft and only on things that float: menus and the part info box
   (`0 6px 24px` to `0 8px 24px`, about 0.2 opacity). Cards get a faint `0 2px 8px` at 0.05.
 - Inputs look pressed in: `inset 0 1px 1px rgba(0,0,0,0.08)`.
@@ -119,18 +119,32 @@ Reuse these; don't add a second version of any of them.
   piece, *How it works* in three steps, a card per piece, the ideas, a dark *Contribute*
   band and a footer. Write it like the rest of the site: plain words, sentence case for
   explanations.
-- **Piece pages**: dark top bar (52px), then a **400px sidebar** of controls on the left and
-  the 3D view filling the rest.
-- Under 800px: everything stacks. Top bar wraps, sidebar goes below a 60vh 3D view, the
-  ideas board becomes one column. Check every change at phone width.
-- Sidebar padding is 24px; section headings have 26px above them.
+- **Piece pages**: dark top bar (52px), then three flat panels on `--ground`, 16px apart:
+  **settings** on the left (320px), the **3D view** in the middle and **Your build** on the
+  right (360px). Panels are white with a `--edge` border and 8px corners, padding 20px.
+  - Settings are grouped under small uppercase headings (Size, Frame, Shelves, Load...).
+    The unit sits inside the number input (`mm`, `kg`), counts use a − / + stepper
+    (`data-stepper`), and a select with three to five options becomes a row of segmented
+    buttons (`data-segmented`). Two options stay a switch. The real `select` stays in the
+    form, hidden, as the value.
+  - The 3D view has a toolbar over it: **3D / Front / Side / Top** camera buttons on the left
+    and a **Drawing / Realistic** switch on the right. Drawing shows white parts with dark
+    edges and dimension lines with the sizes; Realistic is the render. The PDF always uses
+    Realistic.
+  - Your build holds, top to bottom: the notices in a grey box (hidden when there are none),
+    four key numbers, **Parts / Cut list / Steps** tabs (Cut list only for pieces that have
+    one) and the PDF button, which stays at the bottom of the panel.
+  - The ideas page uses the settings panel for its intro and the cards sit on `--ground`.
+- Under 800px: everything stacks as the 3D view (60vh), settings, then Your build, with the
+  PDF button fixed at the bottom of the screen. Top bar wraps and the ideas board becomes
+  one column. Check every change at phone width.
 
 ## 3D view
 
 The model should look like a product photo of real parts, not a game.
 
 - `MeshPhysicalMaterial` with real metalness and roughness: polished chrome rods
-  (roughness 0.08), anodised aluminium profile (0.38), transmissive acrylic (IOR 1.49).
+  (roughness 0.08), satin anodised aluminium profile (metalness 1, roughness 0.3, a light clear coat), transmissive acrylic (IOR 1.49).
 - ACES filmic tone mapping at exposure 0.75, a `RoomEnvironment` for reflections, one soft
   shadowed sun and a shadow catcher on the ground.
 - Model real hardware from manufacturer drawings (T-Nutz, McMaster, CPlot), down to bolts and
@@ -148,21 +162,9 @@ titles. Keep every label inside its box.
 
 ## Where it's heading
 
-From the redesign mockup the owner approved, for later pull requests. Not built yet; when
-building one of these, move it into the sections above.
-
-- Piece pages in three columns: settings on the left, the 3D view in the middle, and a
-  *Your build* panel on the right with the notices, a few key numbers and *Parts / Cut list /
-  Steps* tabs. On a phone: the 3D view, then those tabs, with the PDF button fixed at the
-  bottom.
-- Settings grouped (Size, Frame, Shelves, Load), with the unit inside the input, a − / +
-  stepper for counts and a row of segmented buttons for three to five options.
-- A **Drawing / Realistic** switch on the 3D view: Drawing shows the piece as a technical
-  drawing (white parts, dark edges, dimension lines with the sizes); Realistic is today's
-  render. View buttons: 3D, Front, Side, Top.
-- Notices such as "Added 2 middle columns" shown as a grey box at the top of the results,
-  not as warning text under the buttons.
-- Flat panels (see *Surfaces and depth*) replace the brushed metal sidebar.
+The piece pages, the settings controls and the Drawing / Realistic view from the redesign
+mockup are built. What is left is a pass over the PDF and the ideas cards to match the flat
+panels.
 
 ## Writing on the page
 

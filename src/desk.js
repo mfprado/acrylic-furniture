@@ -10,9 +10,9 @@ export const DESK_DEFAULTS = {
   profile: 'auto', // 'auto' or 20 / 30 / 40
   topThickness: 19, // 3/4 in plywood (with linoleum), flush between the top rails
   topFinish: 'linoleum', // 'linoleum' or 'plain'
-  topColor: '#c9b8a3',
+  topColor: '#171353', // deep indigo linoleum
   stretchers: 'yes', // low side + back stretchers
-  frameColor: '#949494',
+  frameColor: '#c4c8cc', // clear anodised aluminium
   centreRail: 'no', // optional rail across the middle; splits the top into two panels
   loadKg: 50, // spread over the top: monitors, arms, things
   showTop: 'yes', // 3D view only: hide the top to see the frame and joining plates
@@ -217,5 +217,15 @@ export function deskSteps(d) {
     `Drop ${parts.tabs} T-nuts into the bottom slot of the top rails, about ${TAB_SPACING} mm apart. Bolt a joining plate under the rail at each, so its second hole sticks out under the opening for the top.`,
     `Drop the plywood (${parts.top.panels > 1 ? '2 panels, ' : ''}${parts.top.width} × ${parts.top.depth} mm, linoleum side up) in between the top rails. Drive a button head bolt up through each plate's free hole into the top, leaving a ${Math.max(0, d.topGap)} mm gap above the plate so the top sits flush with the rails.`,
     'Level the desk with the feet, then re-tighten every bolt once.',
+  ];
+}
+
+// A few numbers for the top of the Your build panel: [label, value].
+export function deskKeys(d) {
+  return [
+    ['Profile', `${d.size}${d.size}`],
+    ['Legs', `${d.legLength} mm`],
+    ['Top sag', `${d.check.topSag.toFixed(1)} mm`],
+    ['Rail sag', `${d.check.railSag.toFixed(1)} mm`],
   ];
 }

@@ -243,3 +243,13 @@ export function assemblySteps(design) {
   steps.push('Check each shelf with a level and re-tighten every grub screw once.');
   return steps;
 }
+
+// A few numbers for the top of the Your build panel: [label, value].
+export function shelfKeys(d) {
+  return [
+    ['Rods', `Ø${d.d} mm`],
+    ['Columns', String(d.columns)],
+    ['Sag', `${d.sag.toFixed(1)} mm`],
+    ['Clear between shelves', `${Math.round(d.clearGap)} mm`],
+  ];
+}
