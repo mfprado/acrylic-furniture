@@ -66,5 +66,5 @@ export function navHtml() {
     <ul class="menu-list" id="menu-${g.id}" hidden>
       ${g.pieces.map((p) => `<li><a href="#${p.id}" data-page="${p.id}">${esc(p.label)}<small>${esc(p.blurb)}</small></a></li>`).join('')}
     </ul>
-  </div>`).join('') + `<a class="nav-link" href="#${IDEAS_PAGE}" data-page="${IDEAS_PAGE}">Ideas</a>`;
+  </div>`).join('') + `<a class="nav-link" href="#${IDEAS_PAGE}" data-page="${IDEAS_PAGE}"><span aria-hidden="true">💡</span> Ideas</a>`;
 }
