@@ -26,7 +26,7 @@ Each idea is one entry in `IDEAS` in `src/ideas.js`:
   ],
   links: [{ name: 'Glass clamps (inspiration)', url: 'https://…' }], // optional
   issue: 12,                      // the GitHub issue: link and collaborators
-  sketch: `<svg …>`,              // optional: drawn from a reference image, see below
+  sketch: `<svg …>`,              // optional: drawn from a reference image or a clear description, see below
   image: 'https://…',             // optional: a picture the proposer made themselves
 }
 ```
@@ -42,10 +42,12 @@ Each idea is one entry in `IDEAS` in `src/ideas.js`:
   later. If the proposer included them, keep them only if they are the idea itself.
 - **Don't invent facts.** No prices, sizes or specs that the issue doesn't give. If a link
   can't be read, keep it with a plain name and don't describe what's behind it.
-- **A reference image becomes a sketch.** When the proposer shares a picture of the goal
-  ("a square lamp like this"), draw a sketch of it in `sketch` rather than showing the
-  photo. Photos of other people's products aren't ours to republish, and sketches keep the
-  board consistent. See *Drawing the sketch*.
+- **Add a sketch whenever the issue gives enough to draw one.** That means a reference
+  image ("a square lamp like this") or a description clear enough to say what the piece
+  looks like: its overall shape and what it is made of. Draw it in `sketch` rather than
+  showing a photo. Photos of other people's products aren't ours to republish, and sketches
+  keep the board consistent. If there is neither a picture nor a clear description, leave
+  the sketch out and don't guess. See *Drawing the sketch*.
 - **`image` only for the proposer's own picture**, such as a photo of something they built,
   using the `github.com/user-attachments/…` URL from the issue. Never hotlink shop images.
 - New ideas go at the end of `IDEAS`.
@@ -54,17 +56,21 @@ Each idea is one entry in `IDEAS` in `src/ideas.js`:
 
 A sketch shows what the idea looks like. It is not a design.
 
-- Trace what is in the picture: the overall shape and proportions, the main members (legs,
-  frames, rails), the panels or shade, and visible clamps or joints. Nothing that isn't
-  in the picture: no dimensions, labels, hidden parts or invented details.
+- Trace what is in the picture, or, with only text, draw just what the words say: the
+  overall shape and proportions, the main members (legs, frames, rails), the panels or
+  shade, and visible clamps or joints. Nothing that isn't in the picture or the text: no
+  dimensions, labels, hidden parts or invented details. From text, pick the simplest
+  shape that fits the words.
 - Inline SVG, `viewBox="0 0 200 240"`, three-quarter view, with `role="img"` and an
   `aria-label` that says what it shows ("Sketch: square paper shade on four thin legs…").
 - Flat fills in the board's palette: rods and frames `#8a8f94`, clamps `#5b6168`, paper
   `#e9dfc7` / `#d6c8a6`, glow `#fff6dc`, acrylic `rgba(160,200,215,.45)`. No gradients,
   text or external images.
 - Draw back members first, then panels, then front members, so the front rods sit on top.
-- Add a one-line comment above `sketch` saying what it was traced from.
-- Check it in the screenshot next to the reference image: does it read as the same piece?
+- Add a one-line comment above `sketch` saying what it was traced from (the photo, or the
+  issue text).
+- Check it in the screenshot next to the reference image, or reread the issue text: does
+  it read as the same piece?
 
 ## Steps
 
@@ -72,7 +78,7 @@ A sketch shows what the idea looks like. It is not a design.
    for one bullet point, ask on the issue instead of guessing. If the idea came from
    somewhere else (a chat, a message), open an issue for it first with the `idea` label.
 2. Add the entry to `src/ideas.js`, with `issue` set. If the issue or the request has a
-   reference image, draw its `sketch`.
+   reference image or a description clear enough to draw, add its `sketch`.
 3. Run `node --test`.
 4. Serve the folder (`node scripts/serve.mjs`), open the Ideas page and take a
    screenshot of the board.

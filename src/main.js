@@ -3,8 +3,8 @@ import { computeDesk, deskRows, deskSteps, DESK_DEFAULTS } from './desk.js';
 import { partInfo } from './partinfo.js';
 import { createViewer, renderParts, renderSteps, shelfStepTags, deskStepTags } from './scene.js';
 import { downloadSpec } from './pdf.js';
-import { IDEAS, ideaCard, loadPeople } from './ideas.js';
-import { IDEAS_PAGE, findPiece, navHtml } from './catalog.js';
+import { IDEAS, ideaCard, ideaTeaser, loadPeople } from './ideas.js';
+import { HOME_PAGE, IDEAS_PAGE, findPiece, navHtml, pieceCardsHtml } from './catalog.js';
 
 const viewer = createViewer(document.querySelector('#viewer'), { onPick: showPart });
 
@@ -113,10 +113,18 @@ TABS.shelf.form.elements.material.addEventListener('change', syncMaterial);
 // The ideas tab is a board, not a configurator: no form, no 3D view.
 $('ideaList').innerHTML = IDEAS.map(ideaCard).join('');
 document.querySelectorAll('#ideaList .people').forEach(loadPeople);
-const isTab = (name) => name in TABS || name === IDEAS_PAGE;
+const isTab = (name) => name in TABS || name === IDEAS_PAGE || name === HOME_PAGE;
+
+// Home page: a card per piece (before the "design the next one" card) and the ideas.
+$('pieceCards').insertAdjacentHTML('afterbegin', pieceCardsHtml());
+$('ideaTeasers').innerHTML = IDEAS.map(ideaTeaser).join('');
+document.querySelectorAll('[data-scroll]').forEach((a) => a.addEventListener('click', (e) => {
+  e.preventDefault();
+  $(a.dataset.scroll).scrollIntoView({ behavior: 'smooth' });
+}));
 
 // Top bar: a menu per furniture type. The page is in the URL hash so it can be linked to;
-// without one, open the page used last.
+// without one, open the page used last, or the home page on a first visit.
 $('topnav').innerHTML = navHtml();
 const menus = [...document.querySelectorAll('.menu')];
 function closeMenus(except) {
@@ -140,7 +148,7 @@ document.querySelectorAll('#topnav a').forEach((a) => a.addEventListener('click'
 const fromHash = () => location.hash.slice(1);
 window.addEventListener('hashchange', () => { if (isTab(fromHash())) showTab(fromHash()); });
 
-let tab = [fromHash(), read(TAB_KEY)].find(isTab) ?? 'shelf';
+let tab = [fromHash(), read(TAB_KEY)].find(isTab) ?? HOME_PAGE;
 const framed = {};
 let current = null;
 

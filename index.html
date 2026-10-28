@@ -3,20 +3,29 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Open Source Modular Furniture</title>
+  <title>Open Source Modular Furniture: Free DIY Furniture Configurator</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <meta name="description" content="Open source furniture you design and build yourself: Lego for adults. Free configurator for chrome rod shelves in acrylic, plywood, MDF, OSB or MFC, and T-slot aluminium profile desks, with parts list, cut list, 3D preview and PDF build guide." />
   <meta name="keywords" content="open source furniture, open source modular furniture, modular furniture system, DIY furniture, modular furniture, furniture configurator, acrylic shelf, perspex shelf, plywood shelf, MDF shelf, chrome rod shelf, linear shaft furniture, T-slot aluminium, aluminium extrusion desk, 2020 3030 4040 profile, cut list generator, bill of materials, flat pack, maker, Lego for adults" />
   <meta name="author" content="mfprado" />
-  <meta name="robots" content="index, follow" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+  <meta name="theme-color" content="#15171a" />
   <link rel="canonical" href="https://mfprado.github.io/open-source-modular-furniture/" />
+  <link rel="alternate" type="text/plain" href="llms.txt" title="Project summary for AI agents" />
   <meta property="og:type" content="website" />
+  <meta property="og:locale" content="en_GB" />
+  <meta property="og:image" content="https://mfprado.github.io/open-source-modular-furniture/assets/renders/rod-shelf.jpg" />
+  <meta property="og:image:width" content="1400" />
+  <meta property="og:image:height" content="1048" />
+  <meta property="og:image:alt" content="3D view of a rod shelf: two fluted navy acrylic shelves on chrome rods, held by cross clamps" />
   <meta property="og:title" content="Open Source Modular Furniture: free DIY furniture configurator" />
   <meta property="og:description" content="Open source furniture you design and build yourself: Lego for adults. Free configurator for chrome rod shelves in acrylic, plywood, MDF, OSB or MFC, and T-slot aluminium profile desks, with parts list, cut list, 3D preview and PDF build guide." />
   <meta property="og:url" content="https://mfprado.github.io/open-source-modular-furniture/" />
   <meta property="og:site_name" content="Open Source Modular Furniture" />
-  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://mfprado.github.io/open-source-modular-furniture/assets/renders/rod-shelf.jpg" />
+  <meta name="twitter:image:alt" content="3D view of a rod shelf: two fluted navy acrylic shelves on chrome rods, held by cross clamps" />
   <meta name="twitter:title" content="Open Source Modular Furniture: free DIY furniture configurator" />
   <meta name="twitter:description" content="Open source furniture you design and build yourself: Lego for adults. Free configurator for chrome rod shelves in acrylic, plywood, MDF, OSB or MFC, and T-slot aluminium profile desks, with parts list, cut list, 3D preview and PDF build guide." />
   <script type="application/ld+json">
@@ -26,8 +35,25 @@
       "name": "Open Source Modular Furniture",
       "url": "https://mfprado.github.io/open-source-modular-furniture/",
       "description": "Open source furniture you design and build yourself: Lego for adults. Free configurator for chrome rod shelves in acrylic, plywood, MDF, OSB or MFC, and T-slot aluminium profile desks, with parts list, cut list, 3D preview and PDF build guide.",
+      "image": [
+        "https://mfprado.github.io/open-source-modular-furniture/assets/renders/rod-shelf.jpg",
+        "https://mfprado.github.io/open-source-modular-furniture/assets/renders/profile-desk.jpg"
+      ],
       "applicationCategory": "DesignApplication",
+      "applicationSubCategory": "Furniture configurator",
       "operatingSystem": "Any (web browser)",
+      "browserRequirements": "Requires a browser with WebGL and JavaScript",
+      "inLanguage": "en",
+      "author": { "@type": "Person", "name": "mfprado", "url": "https://github.com/mfprado" },
+      "featureList": [
+        "Chrome rod shelf configurator: acrylic, plywood, MDF, OSB or MFC shelves",
+        "T-slot aluminium profile desk configurator",
+        "Parts list and bill of materials",
+        "Cut list for sheet materials",
+        "Live 3D preview",
+        "Sag and load checks",
+        "PDF build guide download"
+      ],
       "isAccessibleForFree": true,
       "license": "https://github.com/mfprado/open-source-modular-furniture",
       "codeRepository": "https://github.com/mfprado/open-source-modular-furniture",
@@ -52,7 +78,7 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --ink: #15171a; --muted: #5b6168; --line: rgba(0, 0, 0, 0.12); --bg: #f7f7f5;
+      --ink: #15171a; --muted: #5b6168; --line: rgba(0, 0, 0, 0.12); --bg: #f7f7f5; --ground: #eef0f1; --edge: #d3d7da; --radius: 6px;
       --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
       --chrome: repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 1px, rgba(0,0,0,0.025) 1px 2px, transparent 2px 4px), linear-gradient(100deg, #d9dcdf 0%, #cdd1d4 40%, #d6d9dc 70%, #cbcfd2 100%);
     }
@@ -150,6 +176,75 @@
     .idea .people img { width: 20px; height: 20px; border-radius: 50%; }
     .idea .join { display: block; margin-top: 12px; padding: 6px; text-align: center; font: 600 10.5px var(--mono); letter-spacing: .08em; text-transform: uppercase; text-decoration: none; border: 1px solid #2c3035; border-radius: 3px; }
     .idea .join:hover { background: #2c3035; color: #e9ebed; }
+    /* home page: the pitch, the pieces and the ways in. Full width, scrolls on its own. */
+    #home { flex: 1; min-height: 0; overflow-y: auto; font: 14px/1.6 var(--mono); color: var(--ink); background: var(--ground); }
+    .home-wrap { max-width: 1280px; margin: 0 auto; padding: 0 28px; }
+    .hero { display: flex; flex-wrap: wrap; align-items: center; gap: 40px; padding: 56px 0; }
+    .hero-text { flex: 1 1 420px; min-width: 0; }
+    .kicker { margin: 0 0 16px; font: 600 11px var(--mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+    .hero-title { margin: 0; padding: 0; font: 600 38px/1.15 var(--mono); letter-spacing: -0.02em; text-transform: none; color: var(--ink); border: 0; box-shadow: none; }
+    .lede { margin: 20px 0 0; max-width: 540px; color: #3d4247; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+    .button { display: inline-flex; align-items: center; gap: 8px; min-height: 46px; padding: 0 20px; font: 600 11px var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: #e9ebed; background: #2c3035; border: 1px solid #1b1e21; border-radius: var(--radius); text-decoration: none; cursor: pointer; }
+    .button:hover { background: #3a3f45; }
+    .button.outline { color: #2c3035; background: transparent; border-color: #2c3035; }
+    .button.outline:hover { color: #e9ebed; background: #2c3035; }
+    #home a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+    .ticks { display: flex; flex-wrap: wrap; gap: 6px 20px; margin: 24px 0 0; padding: 0; list-style: none; font-size: 12px; color: var(--muted); }
+    .ticks li::before { content: '✓ '; color: var(--ink); }
+    .ticks a { color: inherit; }
+    .hero-render { position: relative; flex: 1 1 480px; min-width: 0; height: 500px; margin: 0; background: linear-gradient(#fff, #eceef0); border: 1px solid var(--edge); border-radius: 8px; overflow: hidden; }
+    .hero-render img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    .hero-render ul { position: absolute; top: 16px; right: 16px; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; margin: 0; padding: 0; list-style: none; }
+    .hero-render li { padding: 6px 10px; font: 600 10.5px var(--mono); letter-spacing: 0.1em; text-transform: uppercase; background: #fff; border: 1px solid var(--edge); border-radius: 4px; }
+    .hero-render figcaption { position: absolute; left: 16px; right: 16px; bottom: 12px; font-size: 11px; color: var(--muted); }
+    .home-block { padding: 0 0 64px; }
+    .home-block > h2 { margin-top: 0; }
+    .home-title { margin: 0; font: 600 20px var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink); }
+    .home-sub { margin: 4px 0 20px; font-size: 13px; color: var(--muted); }
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; counter-reset: step; }
+    .steps li { padding: 22px; font-size: 13px; color: #3d4247; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); }
+    .steps li::before { counter-increment: step; content: counter(step, decimal-leading-zero); display: block; font-size: 12px; font-weight: 600; color: var(--muted); }
+    .steps h3, .piece-card h3, .idea-teaser h3 { margin: 6px 0; font: 600 14px var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); }
+    .piece-grid, #ideaTeasers { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 16px; }
+    .piece-card { display: flex; flex-direction: column; padding-bottom: 18px; color: var(--ink); text-decoration: none; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 2px 8px rgba(0,0,0,.05); overflow: hidden; }
+    .piece-card:hover { border-color: #a3a8ad; }
+    .piece-card img { display: block; width: 100%; height: 210px; object-fit: cover; margin-bottom: 14px; background: linear-gradient(#fff, #eceef0); border-bottom: 1px solid var(--line); }
+    .piece-card > :not(img) { margin-left: 18px; margin-right: 18px; }
+    .piece-card .group { font: 600 10.5px var(--mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+    .piece-card p, .idea-teaser p { margin-top: 0; margin-bottom: 6px; font-size: 13px; color: #3d4247; }
+    .piece-card .credit { font-size: 12px; color: var(--muted); }
+    .piece-card .go, .idea-teaser a { margin-top: auto; padding-top: 8px; font: 600 11px var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink); }
+    .piece-card.new { justify-content: center; gap: 4px; min-height: 300px; padding: 24px 6px; background: transparent; border: 1px dashed #9aa0a6; box-shadow: none; }
+    .piece-card.new .plus { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; font-size: 22px; background: #fff; border: 1px solid var(--edge); border-radius: var(--radius); }
+    .ideas-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px; }
+    .idea-teaser { display: flex; flex-direction: column; padding: 18px; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); }
+    .idea-teaser .issue { font-size: 11px; color: var(--muted); }
+    .contribute { color: #e9ebed; background: #2c3035; }
+    .contribute .home-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 40px; padding-top: 64px; padding-bottom: 64px; }
+    .contribute .home-wrap > div { flex: 1 1 420px; min-width: 0; }
+    .contribute .kicker { color: #b9bec3; }
+    .contribute .home-title { font-size: 26px; line-height: 1.25; letter-spacing: -0.01em; text-transform: none; color: #e9ebed; padding: 0; border: 0; box-shadow: none; }
+    .contribute p { max-width: 500px; color: #c9cdd1; }
+    .contribute .button { color: #15171a; background: #e9ebed; border-color: #e9ebed; }
+    .contribute .button.outline { color: #e9ebed; background: transparent; border-color: #5b6168; }
+    .contribute a:focus-visible { outline-color: #e9ebed !important; }
+    .contribute ol { flex: 1 1 380px; display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; font-size: 13px; counter-reset: c; }
+    .contribute li { display: flex; gap: 14px; padding: 16px 18px; background: #353a40; border: 1px solid #454b52; border-radius: var(--radius); }
+    .contribute li::before { counter-increment: c; content: counter(c, decimal-leading-zero); font-weight: 600; color: #b9bec3; }
+    .home-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 32px; padding-top: 24px; padding-bottom: 36px; font-size: 12px; color: var(--muted); }
+    .home-foot nav { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+    .home-foot a { color: inherit; }
+    @media (max-width: 800px) {
+      #home { overflow: visible; }
+      .home-wrap { padding: 0 16px; }
+      .hero { gap: 24px; padding: 32px 0 40px; }
+      .hero-title { font-size: 26px; }
+      .hero-render { flex-basis: 100%; height: 280px; }
+      .home-title { font-size: 17px; }
+      .contribute .home-wrap { padding-top: 44px; padding-bottom: 44px; }
+      .piece-card.new { min-height: 0; }
+    }
     @media (max-width: 800px) {
       body { display: block; height: auto; }
       .topbar { flex-wrap: wrap; gap: 0 12px; height: auto; padding: 8px 16px; }
@@ -163,14 +258,100 @@
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="#shelf"><img src="favicon.svg" alt="" /><h1>Open Source Modular Furniture</h1></a>
+    <a class="brand" href="#home"><img src="favicon.svg" alt="" /><h1>Open Source Modular Furniture</h1></a>
     <nav class="topnav" id="topnav" aria-label="Furniture"></nav>
   </header>
-  <main>
+  <section id="home" data-for="home" aria-labelledby="homeTitle">
+    <div class="home-wrap">
+      <div class="hero">
+        <div class="hero-text">
+          <p class="kicker">Open source furniture</p>
+          <h2 class="hero-title" id="homeTitle">Furniture you size yourself, from parts you can buy anywhere.</h2>
+          <p class="lede">Standard rods, profiles, clamps and sheets, snapped together into shelves, desks, lamps or anything modular you can design, sized to fit your space. Set the dimensions and get the parts list, cut list, 3D preview and a step-by-step PDF build guide.</p>
+          <div class="actions">
+            <a class="button" href="#shelf">Design a rod shelf <span aria-hidden="true">→</span></a>
+            <a class="button outline" href="#home" data-scroll="pieces">See all pieces</a>
+          </div>
+          <ul class="ticks">
+            <li>Free, no sign-up</li>
+            <li>Sag and load checks built in</li>
+            <li><a href="https://github.com/mfprado/open-source-modular-furniture">Code on GitHub</a></li>
+          </ul>
+        </div>
+        <figure class="hero-render">
+          <img src="assets/renders/rod-shelf.jpg" alt="3D view of a rod shelf: two fluted navy acrylic shelves on chrome rods, held by cross clamps" />
+          <ul aria-label="What you get"><li>Parts list</li><li>Cut list</li><li>PDF build guide</li></ul>
+          <figcaption>Rod shelf · 1200 × 250 × 450 mm · fluted acrylic</figcaption>
+        </figure>
+      </div>
+
+      <section class="home-block" aria-labelledby="howTitle">
+        <h2 id="howTitle">How it works</h2>
+        <ol class="steps">
+          <li><h3>Pick a piece</h3>A shelf or a desk today, and whatever the community designs next: lamps, stools, anything modular. Each one is a small kit of standard parts.</li>
+          <li><h3>Set your sizes</h3>Type the width, depth and height you need. It checks sag and load as you go and adds supports when they're needed.</li>
+          <li><h3>Buy and build</h3>Take the parts list shopping, send the cut list to a cutting service and follow the PDF.</li>
+        </ol>
+      </section>
+
+      <section class="home-block" id="pieces" aria-labelledby="piecesTitle">
+        <h2 class="home-title" id="piecesTitle">Pick a piece</h2>
+        <p class="home-sub">More are designed by the community.</p>
+        <div class="piece-grid" id="pieceCards">
+          <a class="piece-card new" href="https://github.com/mfprado/open-source-modular-furniture#contributing">
+            <span class="plus" aria-hidden="true">+</span>
+            <h3>Design the next one</h3>
+            <p>No code needed. Bring the idea; an AI agent does the programming with you.</p>
+            <span class="go">How to contribute →</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="home-block" aria-labelledby="ideasTitle">
+        <div class="ideas-head">
+          <div>
+            <h2 class="home-title" id="ideasTitle">Ideas board</h2>
+            <p class="home-sub">Pieces people want that nobody has designed yet. Each one is an open GitHub issue: join in with notes, links and sketches.</p>
+          </div>
+          <a class="button outline" href="#ideas">See the ideas board</a>
+        </div>
+        <div id="ideaTeasers"></div>
+      </section>
+    </div>
+
+    <section class="contribute" aria-labelledby="contribTitle">
+      <div class="home-wrap">
+        <div>
+          <p class="kicker">Contribute</p>
+          <h2 class="home-title" id="contribTitle">You don't need to code to add a piece.</h2>
+          <p>Designers are welcome. An AI agent does the programming; you make the design decisions. It writes a design brief with you, builds the page, the 3D model and the PDF, and opens the pull request.</p>
+          <div class="actions">
+            <a class="button" href="https://github.com/mfprado/open-source-modular-furniture/blob/main/docs/contributing-guide.pdf">Read the contributor guide</a>
+            <a class="button outline" href="https://github.com/mfprado/open-source-modular-furniture">Open on GitHub</a>
+          </div>
+        </div>
+        <ol>
+          <li><span>In the Claude desktop app, open <strong>Code</strong> on your computer.</span></li>
+          <li><span>Ask it to clone this repository and start working there.</span></li>
+          <li><span>Design together in small steps, with a screenshot after each one, then review the pull request.</span></li>
+        </ol>
+      </div>
+    </section>
+
+    <footer class="home-foot home-wrap">
+      <span>Free and open source. If it helped you build something, <a href="https://cafecito.app/mfprado" target="_blank" rel="noopener">buy the maintainers a coffee</a>.</span>
+      <nav aria-label="Elsewhere">
+        <a href="https://github.com/mfprado/open-source-modular-furniture">GitHub</a>
+        <a href="https://cafecito.app/mfprado" target="_blank" rel="noopener">Support on Cafecito</a>
+        <a href="https://www.instagram.com/c.plot_/" target="_blank" rel="noopener">Desk frame by CPlot</a>
+      </nav>
+    </footer>
+  </section>
+  <main data-for="shelf desk ideas">
     <aside>
       <p class="crumb" id="crumb"></p>
       <p class="page-title" id="pageTitle">Rod shelf</p>
-      <p class="intro">An <strong>open source furniture</strong> project. Think of it as Lego for adults: standard rods, profiles, clamps and sheets you can buy anywhere, snapped together into furniture you size yourself. Set the dimensions and get the parts list, cut list, 3D preview and a PDF build guide. Free, and the <a href="https://github.com/mfprado/open-source-modular-furniture">code is on GitHub</a>.</p>
+      <p class="intro">An <strong>open source furniture</strong> project. Standard rods, profiles, clamps and sheets you can buy anywhere, snapped together into furniture you size yourself. Set the dimensions and get the parts list, cut list, 3D preview and a PDF build guide. Free, and the <a href="https://github.com/mfprado/open-source-modular-furniture">code is on GitHub</a>.</p>
       <form id="config" data-for="shelf">
         <label>Width (mm) <input name="width" type="number" min="200" step="10" /></label>
         <label>Depth (mm) <input name="depth" type="number" min="100" step="10" /></label>
@@ -220,7 +401,7 @@
       <p class="hint">Step-by-step assembly instructions are in the PDF.</p>
       </div>
       <footer class="donate">
-        <p>Free and open source. If it helped you build something, you can buy me a coffee.</p>
+        <p>Free and open source. If it helped you build something, <a href="https://cafecito.app/mfprado" target="_blank" rel="noopener">buy the maintainers a coffee</a>.</p>
         <a href="https://cafecito.app/mfprado" target="_blank" rel="noopener">☕ Support on Cafecito</a>
       </footer>
     </aside>

@@ -1,6 +1,6 @@
 # Open Source Modular Furniture
 
-An open source furniture project: Lego for adults. Standard off-the-shelf parts, sized to
+An open source furniture project. Standard off-the-shelf parts, sized to
 your space, with everything you need to buy and build them.
 
 Live: https://mfprado.github.io/open-source-modular-furniture/
@@ -54,12 +54,16 @@ How the site should look, and why, is in [DESIGN.md](DESIGN.md).
 
 ## Site layout
 
+The home page (`#home`) is the first page on a first visit: what the project is, how it
+works, a card per piece and the latest ideas. The site name in the top bar links back to it.
+
 The top bar groups the pieces by furniture type (Shelving, Desks & tables, …), one menu per
 type, with the Ideas board at the end. Each piece has its own URL hash, so
 `…/open-source-modular-furniture/#desk` opens the profile desk directly.
 
 To add a piece, add it to its group in `src/catalog.js` (or start a new group) and give it
-an entry in `TABS` in `src/main.js` with the same id.
+an entry in `TABS` in `src/main.js` with the same id. Give it a `render` too: a still of its
+3D view at the default settings in `assets/renders/`, shown on its home page card.
 
 ## Ideas
 
@@ -89,10 +93,11 @@ what goes on one. To run it with an AI coding agent (Claude Code, Codex or anoth
 
    In Claude Code you can also type `/add-idea 12`.
 3. The agent reads the issue, adds the entry to `src/ideas.js`, draws a sketch if the
-   issue has a picture of the goal (for example "a square lamp like this" plus a photo),
+   issue has a picture of the goal (for example "a square lamp like this" plus a photo) or
+   a description clear enough to draw,
    runs `node --test`, takes a screenshot of the board and opens a PR that references the
    issue (`Refs #12`, never `Closes`, so the issue stays open).
-4. Review the card wording against the issue, and the sketch against the picture, then
+4. Review the card wording against the issue, and the sketch against the picture or text, then
    merge.
 
 Without an agent, follow the same rules by hand: copy an entry in `src/ideas.js`,
@@ -132,5 +137,4 @@ Tests: `node --test`
 
 ## Support
 
-This project is free and open source. If it helped you build something, you can
-[buy me a coffee on Cafecito](https://cafecito.app/mfprado).
+This project is free and open source. If it helped you build something, [buy the maintainers a coffee](https://cafecito.app/mfprado).

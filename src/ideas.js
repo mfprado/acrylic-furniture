@@ -34,6 +34,19 @@ export const IDEAS = [
       'Inspired by glass clamps.',
     ],
     issue: 4,
+    // traced from the proposer's render: a long bench of red bricks with pale panels on top, on a dark aluminium frame
+    sketch: `<svg viewBox="0 0 200 240" role="img" aria-label="Sketch: long low bench, a block of red bricks with eight pale recessed panels on top, sitting on a dark aluminium frame with four legs and low rails, joined with clamps">
+      <g transform="translate(0 20)">
+      <g stroke="#5b6168" stroke-width="4" stroke-linecap="round"><line x1="44" y1="108" x2="44" y2="186"/><line x1="194" y1="108" x2="194" y2="186"/><line x1="44" y1="156" x2="194" y2="156"/><line x1="20" y1="170" x2="44" y2="156"/><line x1="170" y1="170" x2="194" y2="156"/></g>
+      <polygon points="18,92 172,92 196,78 42,78" fill="#cf6a50" stroke="#7d3524"/>
+      <g fill="#e8c9b5"><polygon points="25,89 41,89 54,81 39,81"/><polygon points="44,89 60,89 73,81 58,81"/><polygon points="64,89 79,89 93,81 77,81"/><polygon points="83,89 98,89 112,81 96,81"/><polygon points="102,89 118,89 131,81 116,81"/><polygon points="121,89 137,89 150,81 135,81"/><polygon points="141,89 156,89 170,81 154,81"/><polygon points="160,89 175,89 189,81 173,81"/></g>
+      <polygon points="172,92 196,78 196,106 172,120" fill="#96412e" stroke="#7d3524"/>
+      <rect x="18" y="92" width="154" height="28" fill="#b5533c" stroke="#7d3524"/>
+      <line x1="18" y1="106" x2="172" y2="106" stroke="#7d3524"/>
+      <g stroke="#5b6168" stroke-width="4" stroke-linecap="round"><line x1="20" y1="122" x2="170" y2="122"/><line x1="170" y1="122" x2="194" y2="108"/><line x1="20" y1="122" x2="20" y2="200"/><line x1="170" y1="122" x2="170" y2="200"/><line x1="20" y1="170" x2="170" y2="170"/></g>
+      <g fill="#8a8f94"><ellipse cx="20" cy="201" rx="5" ry="2"/><ellipse cx="170" cy="201" rx="5" ry="2"/><ellipse cx="44" cy="187" rx="5" ry="2"/><ellipse cx="194" cy="187" rx="5" ry="2"/></g>
+      </g>
+    </svg>`,
   },
 ];
 
@@ -49,6 +62,16 @@ export function ideaCard(idea) {
     ${links.length ? `<p class="links">${links.map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.name)} ↗</a>`).join('')}</p>` : ''}
     ${idea.issue ? `<div class="people" data-issue="${Number(idea.issue)}"></div>
     <a class="join" href="${issueUrl(idea.issue)}" target="_blank" rel="noopener">Collaborate on issue #${Number(idea.issue)} ↗</a>` : ''}
+  </article>`;
+}
+
+// Short card for the home page: the title, the first point and the way in.
+export function ideaTeaser(idea) {
+  return `<article class="idea-teaser">
+    ${idea.issue ? `<span class="issue">Issue #${Number(idea.issue)}</span>` : ''}
+    <h3>${esc(idea.title)}</h3>
+    <p>${esc(idea.points[0])}</p>
+    ${idea.issue ? `<a href="${issueUrl(idea.issue)}" target="_blank" rel="noopener">Collaborate ↗</a>` : ''}
   </article>`;
 }
 
