@@ -2,3 +2,8 @@
 node_modules/
 reference/
 pr-screenshots/
+
+# Installed per checkout by scripts/setup.mjs
+.agents/skills/web-design-guidelines/
+.claude/skills/web-design-guidelines
+skills-lock.json
