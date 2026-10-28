@@ -52,6 +52,16 @@ export function ideaCard(idea) {
   </article>`;
 }
 
+// Short card for the home page: the title, the first point and the way in.
+export function ideaTeaser(idea) {
+  return `<article class="idea-teaser">
+    ${idea.issue ? `<span class="issue">Issue #${Number(idea.issue)}</span>` : ''}
+    <h3>${esc(idea.title)}</h3>
+    <p>${esc(idea.points[0])}</p>
+    ${idea.issue ? `<a href="${issueUrl(idea.issue)}" target="_blank" rel="noopener">Collaborate ↗</a>` : ''}
+  </article>`;
+}
+
 // Collaborators are whoever opened or commented on the idea's issue, fetched live so the
 // list grows as people join in. Unauthenticated GitHub API calls are limited per visitor,
 // so on any failure the card simply shows no list.

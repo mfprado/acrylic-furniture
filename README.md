@@ -54,12 +54,16 @@ How the site should look, and why, is in [DESIGN.md](DESIGN.md).
 
 ## Site layout
 
+The home page (`#home`) is the first page on a first visit: what the project is, how it
+works, a card per piece and the latest ideas. The site name in the top bar links back to it.
+
 The top bar groups the pieces by furniture type (Shelving, Desks & tables, …), one menu per
 type, with the Ideas board at the end. Each piece has its own URL hash, so
 `…/open-source-modular-furniture/#desk` opens the profile desk directly.
 
 To add a piece, add it to its group in `src/catalog.js` (or start a new group) and give it
-an entry in `TABS` in `src/main.js` with the same id.
+an entry in `TABS` in `src/main.js` with the same id. Give it a `render` too: a still of its
+3D view at the default settings in `assets/renders/`, shown on its home page card.
 
 ## Ideas
 
