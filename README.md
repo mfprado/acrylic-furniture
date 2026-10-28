@@ -136,5 +136,4 @@ Tests: `node --test`
 
 ## Support
 
-This project is free and open source. If it helped you build something, buy the maintainers a coffee on
-[Cafecito](https://cafecito.app/mfprado).
+This project is free and open source. If it helped you build something, [buy the maintainers a coffee](https://cafecito.app/mfprado).
