@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { computeDesign, assemblySteps, cutMyOrder } from '../src/calc.js';
+import { computeDesign, assemblySteps, cutMyOrder, shelfKeys } from '../src/calc.js';
 
 test('2 shelf 1200 x 250 x 450 unit', () => {
   const d = computeDesign({ width: 1200, depth: 250, height: 450, shelves: 2, thickness: 8 });
@@ -44,7 +44,7 @@ test('Cut My order rounds holes up and lists every hole', () => {
   assert.ok(cutMyOrder(computeDesign({ thickness: 5 })).notes.some((n) => n.includes('thin')));
 });
 
-import { computeDesk, deskRows, deskSteps } from '../src/desk.js';
+import { computeDesk, deskRows, deskSteps, deskKeys, DESK_DEFAULTS } from '../src/desk.js';
 
 test('profile desk matches the CPlot layout', () => {
   const d = computeDesk({});
@@ -70,4 +70,13 @@ test('profile desk matches the CPlot layout', () => {
   assert.equal(rail.parts.top.panels, 2);
   assert.equal(rail.parts.top.width, (1220 - 90) / 2);
   assert.equal(computeDesk({ stretchers: 'no' }).parts.cuts.length, 3);
+});
+
+test('key figures for the Your build panel are label and value pairs', () => {
+  const shelf = shelfKeys(computeDesign({ width: 1200, depth: 250, height: 450, shelves: 2, thickness: 8 }));
+  assert.deepEqual(shelf.map(([label]) => label), ['Rods', 'Columns', 'Sag', 'Clear between shelves']);
+  assert.ok(shelf.every(([, value]) => typeof value === 'string' && value.length));
+  const desk = deskKeys(computeDesk(DESK_DEFAULTS));
+  assert.deepEqual(desk.map(([label]) => label), ['Profile', 'Legs', 'Top sag', 'Rail sag']);
+  assert.match(desk[0][1], /^\d{4}$/);
 });

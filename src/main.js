@@ -1,5 +1,5 @@
-import { computeDesign, assemblySteps, cutMyOrder, DEFAULTS, SHEET_MATERIALS } from './calc.js';
-import { computeDesk, deskRows, deskSteps, DESK_DEFAULTS } from './desk.js';
+import { computeDesign, assemblySteps, cutMyOrder, shelfKeys, DEFAULTS, SHEET_MATERIALS } from './calc.js';
+import { computeDesk, deskRows, deskSteps, deskKeys, DESK_DEFAULTS } from './desk.js';
 import { partInfo } from './partinfo.js';
 import { createViewer, renderParts, renderSteps, shelfStepTags, deskStepTags } from './scene.js';
 import { downloadSpec } from './pdf.js';
@@ -56,6 +56,7 @@ const TABS = {
     compute: computeDesign,
     rows: (d) => partRows(d),
     steps: assemblySteps,
+    keys: shelfKeys,
     summary: (d) =>
       `Ø${d.d} mm rods · ${d.columns} columns · sag ${d.sag.toFixed(1)} mm over ${Math.round(d.span)} mm · ${Math.round(d.clearGap)} mm clear between shelves`,
     total: (d) => `${(d.parts.rodTotalLength / 1000).toFixed(2)} m of Ø${d.d} rod in total`,
@@ -67,6 +68,7 @@ const TABS = {
     compute: computeDesk,
     rows: deskRows,
     steps: deskSteps,
+    keys: deskKeys,
     summary: (d) =>
       `${d.size}${d.size} profile · legs ${d.legLength} mm · ${d.withStretchers ? `stretchers at ${d.stretcherZ} mm` : 'no stretchers'}${d.midRail ? ' · centre rail' : ''} · sag ${d.check.topSag.toFixed(1)} mm top, ${d.check.railSag.toFixed(1)} mm rails under ${d.check.load} kg`,
     total: (d) => `${(d.parts.profileTotal / 1000).toFixed(2)} m of ${d.size}${d.size} profile in total`,
@@ -156,6 +158,8 @@ function showTab(name) {
   tab = name;
   write(TAB_KEY, name);
   document.querySelectorAll('[data-for]').forEach((el) => (el.hidden = !el.dataset.for.split(' ').includes(name)));
+  document.querySelector('main').dataset.page = name;
+  if (name === 'desk' && $('tab-cut').getAttribute('aria-selected') === 'true') selectBuildTab('parts');
   if (fromHash() !== name) history.replaceState(null, '', `#${name}`);
   const found = findPiece(name);
   $('crumb').textContent = found ? found.group.label : '';
@@ -179,6 +183,7 @@ function render() {
     design = t.compute(input);
   } catch (e) {
     $('warnings').innerHTML = `<li>${e.message}</li>`;
+    $('notices').hidden = false;
     return;
   }
   current = design;
@@ -186,16 +191,20 @@ function render() {
   // Re-frame the camera only when the overall size changes, so colour or finish tweaks
   // keep the angle you chose.
   const size = `${input.width}x${input.depth}x${input.height}`;
-  viewer.show(design, { keepCamera: size === framed[tab] });
+  const keepCamera = size === framed[tab];
+  viewer.show(design, { keepCamera });
+  if (!keepCamera) setView('3d');
   framed[tab] = size;
 
-  $('summary').textContent = t.summary(design);
+  $('keys').innerHTML = t.keys(design).map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+  $('steps').innerHTML = t.steps(design).map((step) => `<li>${step}</li>`).join('');
   $('parts').innerHTML = t
     .rows(design)
     .map(([name, spec, qty]) => `<tr><td>${name}</td><td>${spec}</td><td>${qty}</td></tr>`)
     .join('');
   $('rodtotal').textContent = t.total(design);
   $('warnings').innerHTML = design.warnings.map((w) => `<li>${w}</li>`).join('');
+  $('notices').hidden = !design.warnings.length;
 
   if (tab === 'shelf') {
     $('holes').textContent = design.parts.sheets.holes.map(([x, y]) => `(${Math.round(x)}, ${y})`).join('  ');
@@ -256,7 +265,69 @@ for (const sel of document.querySelectorAll('form select')) {
   switches.push(sync);
   sync();
 }
+
+// Three to five options show as a row of buttons; the select stays (hidden) as the value.
+for (const sel of document.querySelectorAll('select[data-segmented]')) {
+  const seg = document.createElement('div');
+  seg.className = 'seg';
+  seg.setAttribute('role', 'radiogroup');
+  seg.setAttribute('aria-label', sel.closest('label').firstChild.textContent.trim());
+  seg.innerHTML = [...sel.options].map((o) => `<button type="button" role="radio" data-value="${o.value}">${o.text}</button>`).join('');
+  sel.hidden = true;
+  sel.after(seg);
+  const sync = () => seg.querySelectorAll('button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.value === sel.value)));
+  seg.addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    sel.value = b.dataset.value;
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+    sel.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  sel.form.addEventListener('input', sync);
+  switches.push(sync);
+  sync();
+}
+// Counts get a minus and plus. The label points at the input so a click on its text doesn't press a button.
+for (const input of document.querySelectorAll('input[data-stepper]')) {
+  const step = (dir) => {
+    const next = Number(input.value) + dir;
+    input.value = Math.min(Number(input.max) || Infinity, Math.max(Number(input.min) || -Infinity, next));
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+  const button = (text, label, dir) => {
+    const b = Object.assign(document.createElement('button'), { type: 'button', className: 'step-btn', textContent: text });
+    b.setAttribute('aria-label', label);
+    b.addEventListener('click', () => step(dir));
+    return b;
+  };
+  input.id = `stepper-${input.name}`;
+  input.closest('label').htmlFor = input.id;
+  const wrap = document.createElement('span');
+  wrap.className = 'stepper';
+  input.replaceWith(wrap);
+  wrap.append(button('−', 'One fewer', -1), input, button('+', 'One more', 1));
+}
 const syncSwitches = () => switches.forEach((s) => s());
+
+// 3D view: camera side and Drawing / Realistic look.
+let view = '3d';
+function setView(name) {
+  view = name;
+  viewer.setView(name);
+  document.querySelectorAll('[data-view]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === name)));
+}
+document.querySelectorAll('[data-view]').forEach((b) => b.addEventListener('click', () => setView(b.dataset.view)));
+document.querySelectorAll('[data-look]').forEach((b) => b.addEventListener('click', () => {
+  viewer.setLook(b.dataset.look);
+  document.querySelectorAll('[data-look]').forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
+}));
+
+// Your build: Parts / Cut list / Steps
+function selectBuildTab(name) {
+  document.querySelectorAll('.tabs [role=tab]').forEach((b) => b.setAttribute('aria-selected', String(b.id === `tab-${name}`)));
+  document.querySelectorAll('.build [role=tabpanel]').forEach((p) => (p.hidden = p.id !== `panel-${name}`));
+}
+document.querySelectorAll('.tabs [role=tab]').forEach((b) => b.addEventListener('click', () => selectBuildTab(b.id.slice(4))));
 $('reset').addEventListener('click', () => {
   try { localStorage.removeItem(storeKey(tab)); } catch { /* ignore */ }
   fill(TABS[tab].form, TABS[tab].defaults);
@@ -283,6 +354,7 @@ $('download').addEventListener('click', async (e) => {
     buildPdf();
   } catch (err) {
     $('warnings').innerHTML = `<li>PDF failed: ${err.message}</li>`;
+    $('notices').hidden = false;
   } finally {
     btn.textContent = label;
     btn.disabled = false;

@@ -219,3 +219,13 @@ export function deskSteps(d) {
     'Level the desk with the feet, then re-tighten every bolt once.',
   ];
 }
+
+// A few numbers for the top of the Your build panel: [label, value].
+export function deskKeys(d) {
+  return [
+    ['Profile', `${d.size}${d.size}`],
+    ['Legs', `${d.legLength} mm`],
+    ['Top sag', `${d.check.topSag.toFixed(1)} mm`],
+    ['Rail sag', `${d.check.railSag.toFixed(1)} mm`],
+  ];
+}
