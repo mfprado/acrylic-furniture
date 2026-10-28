@@ -15,6 +15,42 @@ preview.
 The profile desk is based on the open source Profile Desk Frame by Palmer Purcell (CPlot,
 [@c.plot_ on Instagram](https://www.instagram.com/c.plot_/)).
 
+## Contributing
+
+You don't need to code. Designers are welcome: the AI agent does the programming, you make
+the design decisions.
+
+**New here? Start with the contributor guide slides**
+([Google Slides](https://docs.google.com/presentation/d/1I9-3j3nR0PeYaLsFDj4lVqFOk5Pe61Ug/edit) ·
+[PDF](docs/contributing-guide.pdf)): a walkthrough of contributing with the Claude desktop
+app, from opening the project to the pull request.
+
+<video src="docs/contributing-guide.mp4" controls width="100%"></video>
+
+[Watch the contributor guide video](docs/contributing-guide.mp4) if it doesn't play above.
+
+1. In the Claude desktop app, open **Code**, pick **This computer** as the environment
+   and **Choose…** a folder such as Documents. (Other AI coding agents work too: Claude
+   Code, Codex, Cursor…)
+2. Say:
+
+   ```text
+   I want to work on this repository https://github.com/mfprado/open-source-modular-furniture. Clone it and let's start working there.
+   ```
+
+   Next time, choose the `open-source-modular-furniture` folder and just say
+   `let's work on this`.
+3. It follows `.agents/skills/contribute/SKILL.md`: it gets the site running on your
+   computer, asks what you want to do, and builds it with you in small steps, showing a
+   screenshot after each one. For a new piece it first writes a design brief with you
+   (`docs/designs/<piece>.md`): parts and where their sizes come from, the settings people
+   can change, the rules, the warnings and the assembly steps. Then it builds the parts
+   list, the page, the 3D model and the PDF, one at a time.
+4. It checks the work (tests plus screenshots of each scenario) and opens a pull request
+   in the standard shape, `.github/pull_request_template.md`: what it adds, the issue,
+   the design brief, parts and sources, test output, screenshots, assumptions to verify
+   and next steps.
+
 ## Site layout
 
 The top bar groups the pieces by furniture type (Shelving, Desks & tables, …), one menu per
@@ -61,38 +97,6 @@ what goes on one. To run it with an AI coding agent (Claude Code, Codex or anoth
 Without an agent, follow the same rules by hand: copy an entry in `src/ideas.js`,
 keep the proposer's words, add `issue`, and reference the issue in the PR without
 closing it.
-
-## Contributing
-
-You don't need to code. Designers are welcome: the AI agent does the programming, you make
-the design decisions.
-
-**New here? Start with the contributor guide slides**
-([Google Slides](https://docs.google.com/presentation/d/1I9-3j3nR0PeYaLsFDj4lVqFOk5Pe61Ug/edit) ·
-[PDF](docs/contributing-guide.pdf)): a walkthrough of contributing with the Claude desktop
-app, from opening the project to the pull request.
-
-1. In the Claude desktop app, open **Code**, pick **This computer** as the environment
-   and **Choose…** a folder such as Documents. (Other AI coding agents work too: Claude
-   Code, Codex, Cursor…)
-2. Say:
-
-   ```text
-   I want to work on this repository https://github.com/mfprado/open-source-modular-furniture. Clone it and let's start working there.
-   ```
-
-   Next time, choose the `open-source-modular-furniture` folder and just say
-   `let's work on this`.
-3. It follows `.agents/skills/contribute/SKILL.md`: it gets the site running on your
-   computer, asks what you want to do, and builds it with you in small steps, showing a
-   screenshot after each one. For a new piece it first writes a design brief with you
-   (`docs/designs/<piece>.md`): parts and where their sizes come from, the settings people
-   can change, the rules, the warnings and the assembly steps. Then it builds the parts
-   list, the page, the 3D model and the PDF, one at a time.
-4. It checks the work (tests plus screenshots of each scenario) and opens a pull request
-   in the standard shape, `.github/pull_request_template.md`: what it adds, the issue,
-   the design brief, parts and sources, test output, screenshots, assumptions to verify
-   and next steps.
 
 ## Construction
 
