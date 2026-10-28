@@ -25,9 +25,7 @@ the design decisions.
 [PDF](docs/contributing-guide.pdf)): a walkthrough of contributing with the Claude desktop
 app, from opening the project to the pull request.
 
-<video src="docs/contributing-guide.mp4" controls width="100%"></video>
-
-[Watch the contributor guide video](docs/contributing-guide.mp4) if it doesn't play above.
+https://github.com/user-attachments/assets/7c24820d-a20d-40ba-b46a-5c2258b0ef55
 
 1. In the Claude desktop app, open **Code**, pick **This computer** as the environment
    and **Choose…** a folder such as Documents. (Other AI coding agents work too: Claude
