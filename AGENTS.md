@@ -22,6 +22,20 @@ Just cloned this repository for someone ("clone it and let's start working there
 inside the clone and follow the `contribute` skill from the start: ask what they want to
 do, then start the site.
 
+## Working here
+
+- **Start from the latest version.** When you open the repo, pull `main` first. In Claude
+  Code the SessionStart hook in `.claude/settings.json` does it (`scripts/pull-main.mjs`);
+  in other agents, run `node scripts/pull-main.mjs`. It only fast-forwards; if it reports a
+  problem, tell the user before changing anything.
+- **New work gets its own branch**, made from the latest `main` and named
+  `<username>-<title>`: the contributor's GitHub username and a short title in lower case
+  with hyphens, e.g. `mfprado-sidebar-navigation`.
+- **Everything reaches `main` through a pull request.**
+- **Conflicts are normal.** Several people can work on the same thing; if a PR conflicts
+  with `main`, merge `main` into the branch, keep both sides' intent, run the tests, and
+  explain to the contributor in plain words what you combined.
+
 ## Pull requests
 
 Follow `.github/pull_request_template.md`; the `contribute` skill explains how to fill it

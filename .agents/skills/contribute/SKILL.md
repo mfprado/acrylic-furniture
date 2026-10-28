@@ -21,31 +21,46 @@ You do the technical work. They make the design decisions and say whether it loo
   in half a sentence.
 - One question at a time, and offer choices when you can ("Should the width go up in 10 mm
   steps, or 1 mm?").
+- **Make choices clickable.** When your agent has a tool for asking a multiple-choice
+  question (in Claude Code and the Claude desktop app, `AskUserQuestion`), use it for every
+  question with a few clear answers: the opening menu, design options, "does this look
+  right?" (*Looks right* / *Change something*), "ready to send it?". Put your suggested
+  answer first. They can always pick "Other" and type. Without such a tool, write the
+  options as a short numbered list.
 - Run every command yourself. Only ask them to do something when you can't: signing in to
   GitHub, opening a page in their browser, taking a photo of a part, dragging an image.
   Then give exact clicks.
-- Show, don't describe: after each visible change, take a screenshot and show it, or tell
-  them to refresh the page, and ask "does this look right?".
+- Show, don't describe: after each visible change, take a screenshot and show it, or give
+  them the link to the page that changed, and ask "does this look right?".
+- **Always give the site as a clickable link to the exact page**, written as a Markdown
+  link: [localhost:8000/#desk](http://localhost:8000/#desk), using the piece's id from
+  `src/catalog.js` (`#shelf`, `#desk`, `#ideas`, or the new piece's id). In the Claude
+  desktop app, clicking it opens the site in the Browser pane next to the chat, already
+  refreshed; elsewhere it opens their browser. Never ask them to type an address.
 - Never leave them on an error. If something breaks, fix it or explain in one line what's
   needed from them.
 - Every few steps, say where they are: "Step 3 of 6: the 3D model."
 
 ## 0. Find out what they want
 
-Start with:
+Start by saying "Hi! I'll help you add something to Open Source Modular Furniture and send
+it to the owner for review." Then ask what they'd like to do, as a clickable question
+(header *Task*) with these options:
 
-> Hi! I'll help you add something to Open Source Modular Furniture and send it to the
-> owner for review. What would you like to do?
->
-> 1. **Design a new piece** (a new configurator page), from an idea on the Ideas board or
->    your own
-> 2. **Improve an existing piece** (a new option, a part, a fix to the shelf or desk)
-> 3. **Add an idea to the Ideas board** (no design yet)
-> 4. Something else
+| Option | Description |
+|---|---|
+| Design a new piece | A new configurator page, from an idea on the Ideas board or your own |
+| Improve an existing piece | A new option, a part, or a fix to the shelf or desk |
+| Change the site | Its design or how it works, e.g. a new sidebar or layout |
+| Add an idea | Put an idea on the Ideas board, no design yet |
 
-- **3** → use the `add-idea` skill instead, then come back here at step 5 for the PR.
-- **1** → steps 1 to 6, with step 3 following [new-configurator.md](new-configurator.md).
-- **2 / 4** → steps 1 to 6; in step 3, ask what should change, read the code involved, and
+"Something else" is covered by the tool's own "Other" answer. Without the tool, list the
+same four plus "Something else" as a numbered list.
+
+- **Add an idea** → use the `add-idea` skill instead, then come back here at step 5 for the PR.
+- **Design a new piece** → steps 1 to 6, with step 3 following [new-configurator.md](new-configurator.md).
+- **Change the site** → steps 1 to 6, with step 3 following *Changing the site* below.
+- **Improve an existing piece / something else** → steps 1 to 6; in step 3, ask what should change, read the code involved, and
   agree the change in a few bullet points before building.
 
 ## 1. Get set up
@@ -68,8 +83,8 @@ Check what's already done; skip what is.
      `git clone https://github.com/mfprado/open-source-modular-furniture.git`, then keep
      working inside the clone in this same session: run every command from that folder,
      and read its `AGENTS.md` and this skill from there. Tell them: "Downloaded. Next
-     time, click **Choose…**, pick the folder *open-source-modular-furniture* in your
-     Documents and say *let's work on this*." Then carry on: ask what they want (step 0)
+     time, click **Choose…**, pick the folder *open-source-modular-furniture* inside
+     <the folder they chose> and say *let's work on this*." Then carry on: ask what they want (step 0)
      if you haven't yet, and start the site (step 2).
 2. **Tools.** Check `git --version` and `node --version` (Node 18 or later: it runs the
    site and the tests). If something is missing, give the one installer link they need
@@ -86,9 +101,12 @@ Check what's already done; skip what is.
      `git remote rename origin upstream` and
      `git remote add origin https://github.com/<username>/open-source-modular-furniture.git`.
    - No GitHub account: send them to https://github.com/signup first.
-4. **Up to date.** `git fetch upstream` (or `origin` if there's no upstream) and start a
-   branch from its `main`, named after the change in plain words:
-   `git switch -c <short-name> upstream/main`, e.g. `wall-shelf-configurator`. Explain:
+4. **Up to date, on a new branch.** The project should already be on the latest `main` (see
+   *Working here* in `AGENTS.md`; Claude Code pulls it when the session starts). Fetch
+   it anyway (`git fetch upstream`, or `origin` if there's no upstream) and start a
+   branch from it named `<username>-<title>`: their GitHub username (`gh api user -q
+   .login`, or ask them) and a short title in lower case with hyphens:
+   `git switch -c <username>-<title> upstream/main`, e.g. `mfprado-clamp-lamp`. Explain:
    "I've made a separate workspace for this change, so nothing else is affected."
 
 ## 2. Run the site
@@ -110,15 +128,15 @@ Run it in the background (or in a second terminal if your agent can't), then:
   > everyone sees, and this copy is yours to try things on. Nobody else can see it, and
   > nothing you do here changes the real site.
   >
-  > To open it: open Chrome, click the address bar at the top, type `localhost:8000` and
-  > press Enter. `localhost` means "this computer", and 8000 is just the door number I
-  > opened it on. When I change something, press Cmd+R (Mac) or Ctrl+R (Windows) to
-  > refresh and see it. Keep this chat open: if you close it, the copy stops and the
-  > page shows "This site can't be reached". Just ask me to start it again.
+  > Open it here: [localhost:8000](http://localhost:8000). `localhost` means "this
+  > computer", and 8000 is just the door number I opened it on. When I change
+  > something, I'll send you the link again, or press the ↻ refresh button. Keep this
+  > chat open: if you close it, the copy stops and the page shows "This site can't be
+  > reached". Just ask me to start it again.
 
-  Wait until they say they can see it. In the Claude desktop app the same site can also
-  show in the app's **Browser** pane (Cmd+Shift+B on a Mac, Ctrl+Shift+B on Windows), if
-  they'd rather not switch windows.
+  In the Claude desktop app the link opens the site in the app's **Browser** pane, to the
+  right of the chat (it may already be open there, from `.claude/launch.json`). They can
+  also open the same link in Chrome. Wait until they say they can see it.
 - **In the cloud:** they can't open localhost. Take a screenshot (below) and show it.
 
 Run the tests once now so you know they pass before anything changes: `node --test`.
@@ -170,11 +188,33 @@ Rules for any change:
 - Keep the change to what was agreed. Ideas for other changes go in a list for the PR's
   *Next steps*.
 
-## 4. They try it in Chrome, then you check it
+### Changing the site
+
+For changes to the site itself rather than a piece: its layout, navigation, look, or how
+something works (a new sidebar, a different top bar, a dark mode, a new kind of page).
+
+1. **Understand the proposal.** Ask what they want to change and why: what's hard or
+   missing today. Ask for a picture if they have one: a sketch, a screenshot of a site
+   they like, or a marked-up screenshot of this one. Ask whether it applies to every page
+   or only some.
+2. **Show the current state.** Take a screenshot of the part they want to change, so you
+   both talk about the same thing.
+3. **Agree it in a few bullet points** before building: what moves, what's new, what
+   goes away, and how it behaves on a phone. For a bigger change, offer to try it in
+   small steps (layout first, then details) and show a screenshot after each.
+4. **Keep it consistent with the site.** Reuse its colours and type (`--ink`, `--muted`,
+   the `--mono` font, the dark top bar's `#2c3035`), and keep the existing pages and the
+   3D view working. Ask before removing anything people use today.
+5. In step 4 below, add to their checklist: the change on every page it affects, a
+   narrow phone-width window, and "does anything look out of place now?". Put
+   before/after screenshots in the PR.
+
+## 4. They try it themselves, then you check it
 
 First the designer uses it themselves, the way someone visiting the site would. Make
-sure the local version is running (step 2), remind them it's at `localhost:8000` in
-Chrome, then give them this list one item at a time and wait for their answer to each:
+sure the local version is running (step 2), give them the link to the page
+([localhost:8000/#<id>](http://localhost:8000/#<id>)), then give them this list one item
+at a time and wait for their answer to each:
 
 1. Open the new or changed piece from the top bar menu. Does the 3D view look like the piece?
 2. Change the sizes to the smallest and the largest. Does it still look right?
@@ -184,9 +224,9 @@ Chrome, then give them this list one item at a time and wait for their answer to
 6. Read the parts list. Is it what you'd buy?
 7. Click **Download spec (PDF)** and read it. Could someone build it from this?
 8. Check the Rod shelf and Profile desk pages still work.
-9. Make the Chrome window narrow, like a phone. Is it still usable?
+9. Make the window narrow, like a phone. Is it still usable?
 
-When something's wrong, fix it, tell them to refresh, and ask again. When they're happy
+When something's wrong, fix it, send the link again, and ask again. When they're happy
 (they'll often say "I'm happy, let's send it"), do your own checks and keep the evidence for
 the PR:
 
@@ -240,6 +280,12 @@ write "None" rather than deleting one.
    merges when it's ready. "If they ask for changes, open your AI assistant in this folder
    again and say *let's work on the review comments*." Then read the PR comments, make the changes in
    new commits on the same branch, push, and reply under each comment.
+   If GitHub says the PR has **conflicts** (someone else changed the same files and theirs
+   was merged first), that's normal: merge the latest `main` into the branch, combine both
+   changes so neither is lost, run the tests, send them the link to see the result, and push.
+   Tell them in plain words: "Someone else changed the same part of the site; I've
+   combined their change with yours." Ask them only if the two changes really contradict
+   each other.
 
 ## 6. Wrap up
 
