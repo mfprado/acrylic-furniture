@@ -93,10 +93,11 @@ what goes on one. To run it with an AI coding agent (Claude Code, Codex or anoth
 
    In Claude Code you can also type `/add-idea 12`.
 3. The agent reads the issue, adds the entry to `src/ideas.js`, draws a sketch if the
-   issue has a picture of the goal (for example "a square lamp like this" plus a photo),
+   issue has a picture of the goal (for example "a square lamp like this" plus a photo) or
+   a description clear enough to draw,
    runs `node --test`, takes a screenshot of the board and opens a PR that references the
    issue (`Refs #12`, never `Closes`, so the issue stays open).
-4. Review the card wording against the issue, and the sketch against the picture, then
+4. Review the card wording against the issue, and the sketch against the picture or text, then
    merge.
 
 Without an agent, follow the same rules by hand: copy an entry in `src/ideas.js`,
