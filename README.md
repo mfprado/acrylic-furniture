@@ -38,8 +38,9 @@ https://github.com/user-attachments/assets/7c24820d-a20d-40ba-b46a-5c2258b0ef55
 
    Next time, choose the `open-source-modular-furniture` folder and just say
    `let's work on this`.
-3. It follows `.agents/skills/contribute/SKILL.md`: it gets the site running on your
-   computer, asks what you want to do, and builds it with you in small steps, showing a
+3. It follows `.agents/skills/contribute/SKILL.md`: it sets up the agent's design skills
+   and browser (`node scripts/setup.mjs`), gets the site running on your computer, asks
+   what you want to do, and builds it with you in small steps, showing a
    screenshot after each one. For a new piece it first writes a design brief with you
    (`docs/designs/<piece>.md`): parts and where their sizes come from, the settings people
    can change, the rules, the warnings and the assembly steps. Then it builds the parts
@@ -48,6 +49,8 @@ https://github.com/user-attachments/assets/7c24820d-a20d-40ba-b46a-5c2258b0ef55
    in the standard shape, `.github/pull_request_template.md`: what it adds, the issue,
    the design brief, parts and sources, test output, screenshots, assumptions to verify
    and next steps.
+
+How the site should look, and why, is in [DESIGN.md](DESIGN.md).
 
 ## Site layout
 

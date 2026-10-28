@@ -44,6 +44,7 @@ yourself unless they ask; when they do, offer two or three options with the trad
 7. **What can go wrong.** When should the site warn: too tall to be stable, sags under
    load, longer than a stock sheet, a part that doesn't exist in that size.
 8. **What it looks like** in 3D: materials and colours (chrome, wood, acrylic, painted).
+   Build them the way the *3D view* section of `DESIGN.md` describes.
 
 ### 3. Write the brief
 

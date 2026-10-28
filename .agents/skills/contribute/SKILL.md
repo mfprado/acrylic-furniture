@@ -89,7 +89,10 @@ Check what's already done; skip what is.
 2. **Tools.** Check `git --version` and `node --version` (Node 18 or later: it runs the
    site and the tests). If something is missing, give the one installer link they need
    (https://nodejs.org for Node; https://git-scm.com for Git on Windows; on a Mac,
-   `xcode-select --install` gives git) and wait.
+   `xcode-select --install` gives git) and wait. Then run `node scripts/setup.mjs` once:
+   it adds the web design review skill and a browser you can drive for screenshots
+   (Claude Code and Codex). It's safe to run again; if it reports a problem, explain it in
+   one line and carry on, since the site itself doesn't need it.
 3. **Their copy on GitHub (fork).** Check `git remote -v`.
    - `origin` is their own fork: good.
    - `origin` is `mfprado/open-source-modular-furniture` and they are not the owner: they
@@ -202,9 +205,12 @@ something works (a new sidebar, a different top bar, a dark mode, a new kind of 
 3. **Agree it in a few bullet points** before building: what moves, what's new, what
    goes away, and how it behaves on a phone. For a bigger change, offer to try it in
    small steps (layout first, then details) and show a screenshot after each.
-4. **Keep it consistent with the site.** Reuse its colours and type (`--ink`, `--muted`,
-   the `--mono` font, the dark top bar's `#2c3035`), and keep the existing pages and the
-   3D view working. Ask before removing anything people use today.
+4. **Keep it consistent with the site.** Follow [DESIGN.md](../../../DESIGN.md): its
+   colours, type, components and checks. Use the `frontend-design` skill for ideas, but
+   where it disagrees with DESIGN.md (monospaced, uppercase labels), DESIGN.md wins. Keep
+   the existing pages and the 3D view working, and ask before removing anything people
+   use today. When it's built, run the `web-design-guidelines` skill on the files you
+   changed and fix what it finds.
 5. In step 4 below, add to their checklist: the change on every page it affects, a
    narrow phone-width window, and "does anything look out of place now?". Put
    before/after screenshots in the PR.

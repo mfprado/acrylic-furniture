@@ -5,6 +5,16 @@ Instructions for AI coding agents (Codex, Claude Code, Cursor, Gemini CLI and ot
 A static site with no build step: `index.html` plus ES modules in `src/`. Serve the folder
 (`node scripts/serve.mjs`, port 8000) and run the tests with `node --test`. See `README.md`.
 
+## Setup
+
+Run `node scripts/setup.mjs` once per checkout. It installs the `web-design-guidelines`
+skill and gives Claude Code and Codex a Playwright browser for screenshots and checks.
+
+## Design
+
+Anything visible (a page, a panel, the 3D view, the PDF) follows [`DESIGN.md`](DESIGN.md).
+It wins over general design advice, including the `frontend-design` skill.
+
 ## Skills
 
 Step-by-step procedures live in `.agents/skills/<name>/SKILL.md`. When a request matches
@@ -14,6 +24,8 @@ one, read that file and follow it, even if your agent doesn't load skills by its
 |---|---|
 | [`contribute`](.agents/skills/contribute/SKILL.md) | Someone says "let's work on this", wants to contribute, add a feature, design a new piece or configurator, or make a pull request. Also when you're started here with no clear task. |
 | [`add-idea`](.agents/skills/add-idea/SKILL.md) | Adding an idea to the Ideas board from a GitHub issue or a description. |
+| [`frontend-design`](.agents/skills/frontend-design/SKILL.md) | Designing new UI or reshaping existing UI. From [anthropics/skills](https://github.com/anthropics/skills); `DESIGN.md` overrides it. |
+| `web-design-guidelines` | Reviewing changed UI for accessibility and interface best practices. Installed by `scripts/setup.mjs` from [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills). |
 
 Contributors are often designers who don't code: explain in plain words, run the commands
 yourself, and show results with screenshots.
