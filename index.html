@@ -197,12 +197,20 @@
         <label>Linoleum colour <input name="topColor" type="color" /></label>
         <label>Frame colour <input name="frameColor" type="color" /></label>
       </form>
+      <form id="brickbenchConfig" data-for="brickbench">
+        <label>Bricks along the length <input name="bricksLong" type="number" min="3" max="14" step="1" /></label>
+        <label>Brick rows across the depth <input name="rows" type="number" min="1" max="3" step="1" /></label>
+        <label>Height to top (mm) <input name="height" type="number" min="350" max="600" step="10" /></label>
+        <label>Profile <select name="profile"><option value="auto">Auto</option><option value="20">2020</option><option value="30">3030</option><option value="40">4040</option></select></label>
+        <label>Load on the seat (kg) <input name="loadKg" type="number" min="0" step="5" /></label>
+        <label>Bricks in 3D <select name="showBricks"><option value="no">Hidden</option><option value="yes">Shown</option></select></label>
+      </form>
       <p class="hint" data-for="desk">Based on the open source Profile Desk Frame by Palmer Purcell (CPlot): <a href="https://www.instagram.com/c.plot_/" target="_blank" rel="noopener">@c.plot_ on Instagram ↗</a></p>
       <div data-for="ideas">
         <p>Ideas for pieces that are not in the configurator yet, as they were suggested. Working out the parts and the build is up to whoever designs one.</p>
         <p>Have an idea? <a href="https://github.com/mfprado/open-source-modular-furniture/issues/new?template=idea.md">Open an issue on GitHub</a>.</p>
       </div>
-      <div data-for="shelf desk">
+      <div data-for="shelf desk brickbench">
       <button id="download" type="button">Download spec (PDF)</button>
       <button id="reset" type="button" class="ghost" style="margin-top:8px">Reset to defaults</button>
       <ul id="warnings"></ul>
@@ -228,7 +236,7 @@
       <h2>Ideas board</h2>
       <div id="ideaList"></div>
     </section>
-    <section id="viewer" data-for="shelf desk">
+    <section id="viewer" data-for="shelf desk brickbench">
       <div id="partInfo" class="part-info" role="dialog" aria-modal="false" aria-labelledby="partTitle" hidden>
         <button type="button" class="close" aria-label="Close">×</button>
         <h3 id="partTitle"></h3>

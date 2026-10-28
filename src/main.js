@@ -1,7 +1,8 @@
 import { computeDesign, assemblySteps, cutMyOrder, DEFAULTS, SHEET_MATERIALS } from './calc.js';
 import { computeDesk, deskRows, deskSteps, DESK_DEFAULTS } from './desk.js';
+import { computeBrickbench, brickbenchRows, brickbenchSteps, BRICKBENCH_DEFAULTS } from './brickbench.js';
 import { partInfo } from './partinfo.js';
-import { createViewer, renderParts, renderSteps, shelfStepTags, deskStepTags } from './scene.js';
+import { createViewer, renderParts, renderSteps, shelfStepTags, deskStepTags, brickbenchStepTags } from './scene.js';
 import { downloadSpec } from './pdf.js';
 import { IDEAS, ideaCard, loadPeople } from './ideas.js';
 import { IDEAS_PAGE, findPiece, navHtml } from './catalog.js';
@@ -69,6 +70,17 @@ const TABS = {
     steps: deskSteps,
     summary: (d) =>
       `${d.size}${d.size} profile · legs ${d.legLength} mm · ${d.withStretchers ? `stretchers at ${d.stretcherZ} mm` : 'no stretchers'}${d.midRail ? ' · centre rail' : ''} · sag ${d.check.topSag.toFixed(1)} mm top, ${d.check.railSag.toFixed(1)} mm rails under ${d.check.load} kg`,
+    total: (d) => `${(d.parts.profileTotal / 1000).toFixed(2)} m of ${d.size}${d.size} profile in total`,
+  },
+  brickbench: {
+    form: $('brickbenchConfig'),
+    defaults: BRICKBENCH_DEFAULTS,
+    strings: ['profile', 'showBricks'],
+    compute: computeBrickbench,
+    rows: brickbenchRows,
+    steps: brickbenchSteps,
+    summary: (d) =>
+      `${d.seatLength} × ${d.seatDepth} mm seat · ${d.parts.bricks} bricks on ${d.parts.rods} rods · ${d.size}${d.size} profile · legs ${d.legLength} mm · sag ${d.check.railSag.toFixed(1)} mm rails under ${d.check.load} kg`,
     total: (d) => `${(d.parts.profileTotal / 1000).toFixed(2)} m of ${d.size}${d.size} profile in total`,
   },
 };
@@ -177,7 +189,7 @@ function render() {
 
   // Re-frame the camera only when the overall size changes, so colour or finish tweaks
   // keep the angle you chose.
-  const size = `${input.width}x${input.depth}x${input.height}`;
+  const size = `${input.width ?? input.bricksLong}x${input.depth ?? input.rows}x${input.height}`;
   viewer.show(design, { keepCamera: size === framed[tab] });
   framed[tab] = size;
 
@@ -286,7 +298,7 @@ function buildPdf() {
   if (tab === 'shelf') {
     downloadSpec(current, t.rows(current), t.steps(current), viewer.snapshot(), cutMyText(cutMyOrder(current)), renderParts(current), null, renderSteps(current, shelfStepTags(current)));
   } else {
-    downloadSpec(current, t.rows(current), t.steps(current), viewer.snapshot(), null, renderParts(current), t.summary(current), renderSteps(current, deskStepTags(current)));
+    downloadSpec(current, t.rows(current), t.steps(current), viewer.snapshot(), null, renderParts(current), t.summary(current), renderSteps(current, tab === 'brickbench' ? brickbenchStepTags() : deskStepTags(current)));
   }
 }
 showTab(tab);

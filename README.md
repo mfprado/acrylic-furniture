@@ -107,6 +107,19 @@ closing it.
   a cross clamp per post over the sheet holds a width rail front and back.
 - If the acrylic would sag more than span / 250, middle columns are added.
 
+### Brick bench
+
+Design brief: [`docs/designs/brick-bench.md`](docs/designs/brick-bench.md).
+
+- London stock bricks (228 × 108 × 68 mm) lie flat and touching, long side front to back.
+- Under each brick, two Ø8 mm chrome rods run front to back, held at both ends by rod
+  support blocks bolted into the middle slot of the inner faces of the long rails.
+- The frame is a T-slot profile frame like the desk's (legs, top rails, low stretchers,
+  levelling feet), one profile wider than the bricks on every side, so the tops of the rails
+  surround the lower part of the bricks.
+- Profile starts on 2020; "Auto" picks the lightest profile whose long rails sag no more than
+  span / 300 under the load. A switch in the page hides the bricks to show the frame.
+
 ## Run
 
 No build step. Serve the folder and open it:
@@ -127,6 +140,13 @@ Tests: `node --test`
   (2026-10-24). Clamp length and some flange plate diameters were not shown; measure
   real parts and update.
 - Clamps on that listing only go to 10 mm bore, so rods are limited to Ø6, 8, 10.
+- Brick bench: the brick size is the designer's note for old imperial London stock bricks
+  (2026-10-27); real bricks vary from 68 to 73 mm high. The rod support block is known only
+  from a picture (8 mm bore, two holes 32 mm apart): its height, width, hole size and bolt
+  size, and whether it can mount mid profile on the inner face of a 20, 30 or 40 profile,
+  are not confirmed. The 3D view draws it as a placeholder box. Rod length is taken as the
+  seat depth; the blocks may shorten it. The sag check uses the same simply supported
+  beam rule as the desk, with each long rail carrying half the load.
 - Sag check treats fluted acrylic as solid sheet of the same thickness; fluted is stiffer
   along the flutes, weaker across.
 

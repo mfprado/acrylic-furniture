@@ -127,7 +127,7 @@ export function createViewer(container, { onPick } = {}) {
       acrylic.color.set(design.input.color ?? '#202d6a');
       model = buildModel(design);
       scene.add(model);
-      const { width: W, height: H, depth: D } = design.input;
+      const { width: W = design.width, height: H, depth: D = design.depth } = design.input; // the brick bench derives both from its brick counts
       const size = Math.max(W, H);
       ground.scale.set(W * 3, D * 6, 1);
       Object.assign(sun.shadow.camera, { left: -size, right: size, top: size, bottom: -size, far: size * 6 });
@@ -312,6 +312,7 @@ export function shelfRows(design) {
 
 function buildModel(design) {
   if (design.kind === 'desk') return buildDesk(design);
+  if (design.kind === 'brickbench') return buildBrickbench(design);
   const g = new THREE.Group();
   const { input, d, clampSpec, flange, xs, ys, postLength } = design;
   const { width: W, depth: D, thickness: t, finish = 'fluted' } = input;
@@ -418,7 +419,7 @@ export function renderParts(design) {
     return { url, w: W_PX, h: H_PX };
   };
 
-  if (design.kind === 'desk') {
+  if (design.kind === 'desk' || design.kind === 'brickbench') {
     const { p, input } = design;
     const frame = new THREE.MeshPhysicalMaterial({ color: input.frameColor ?? '#949494', metalness: 0.8, roughness: 0.42 });
     const bar = profileBar(p, p * 4, frame);
@@ -438,6 +439,12 @@ export function renderParts(design) {
       tab: shot(mountingTab(p, 5, frame, p * 0.35), new THREE.Vector3(0.6, 0.9, 1.2)),
       hiddenConnector: shot(hiddenConnector(p, frame), new THREE.Vector3(0.8, 0.7, 1.2)),
     };
+    if (design.kind === 'brickbench') {
+      const rodPiece = rod(design.rods.diameter, design.rods.diameter * 30);
+      rodPiece.rotation.z = Math.PI / 3;
+      out.rod = shot(rodPiece, new THREE.Vector3(0, 0.3, 1));
+      out.brick = shot(londonBrick(design.brick, 3), new THREE.Vector3(0.5, 1.1, 1.2));
+    }
     pmrem.dispose();
     r.dispose();
     r.forceContextLoss();
@@ -923,6 +930,149 @@ function buildDesk(design) {
   return g;
 }
 
+// A London stock brick sitting on y = 0, centred on x and z: bevelled body, a raised rim
+// round a recessed top (the frog) with LONDON BRICK on its floor, and a slightly different
+// red per brick (seed) so the individual bricks read.
+const FROG_RIM = 6; // depth of the recess
+function londonBrick({ width: w, length: l, height: h }, seed) {
+  const g = new THREE.Group();
+  const jitter = (Math.sin(seed * 12.9898) * 43758.5453) % 1;
+  const j = Math.abs(jitter);
+  const color = new THREE.Color().setHSL(0.015 + j * 0.02, 0.55 + j * 0.15, 0.2 + j * 0.07);
+  const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.95 });
+  const rect = (a, b) => new THREE.Shape().moveTo(-a / 2, -b / 2).lineTo(a / 2, -b / 2).lineTo(a / 2, b / 2).lineTo(-a / 2, b / 2).closePath();
+  const bev = { bevelEnabled: true, bevelSize: 1.5, bevelThickness: 1.5, bevelSegments: 2 };
+  // shapes are drawn in x, y and extruded along z; stand them up so the extrusion goes up
+  const solid = (shape, depth, opts) => {
+    const geo = new THREE.ExtrudeGeometry(shape, { depth, ...opts });
+    geo.rotateX(-Math.PI / 2);
+    return geo;
+  };
+  const inner = 1.5; // bevel size, keeps the outside at the brick size
+  const body = mesh(solid(rect(w - 2 * inner, l - 2 * inner), h - FROG_RIM - 2 * inner, bev), mat);
+  body.position.y = inner;
+  g.add(body);
+  const rimShape = rect(w - 2, l - 2); // the rim's own bevel is 1 mm
+  rimShape.holes.push(new THREE.Path().moveTo(-(w / 2 - 18), -(l / 2 - 20)).lineTo(-(w / 2 - 18), l / 2 - 20).lineTo(w / 2 - 18, l / 2 - 20).lineTo(w / 2 - 18, -(l / 2 - 20)).closePath());
+  const rim = mesh(solid(rimShape, FROG_RIM - 2, { bevelEnabled: true, bevelSize: 1, bevelThickness: 1, bevelSegments: 1 }), mat);
+  rim.position.y = h - FROG_RIM + 1;
+  g.add(rim);
+  // lettering on the frog floor, like the reference brick
+  const canvas = Object.assign(document.createElement('canvas'), { width: 512, height: 192 });
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = `#${color.clone().multiplyScalar(0.8).getHexString()}`;
+  ctx.fillRect(0, 0, 512, 192);
+  ctx.fillStyle = `#${color.clone().multiplyScalar(0.55).getHexString()}`;
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 84px sans-serif';
+  ctx.fillText('LONDON', 256, 90);
+  ctx.font = 'italic bold 60px sans-serif';
+  ctx.fillText('BRICK', 256, 160);
+  const floorGeo = new THREE.PlaneGeometry(l - 40, w - 36);
+  floorGeo.rotateX(-Math.PI / 2);
+  floorGeo.rotateY(Math.PI / 2); // lettering runs along the brick
+  const floor = new THREE.Mesh(floorGeo, new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(canvas), roughness: 1 }));
+  floor.position.y = h - FROG_RIM + 0.2;
+  g.add(floor);
+  return g;
+}
+
+// Brick bench: the desk frame without its top, rod support blocks on the long rails, Ø8 rods
+// lying front to back in the blocks, and the bricks flat on the rods. Same axes as the desk.
+const BRICK_COLOR = '#a4432f';
+// Placeholder size for the rod support block until its real sizes are known (see the design
+// brief): a small box around the rod end, not a measured part.
+const BLOCK_MODEL = { x: 24, y: 16, z: 16 };
+
+function buildBrickbench(design) {
+  const g = new THREE.Group();
+  const { p, size, prof, frameTop, rodZ, legLength, stretcherZ, footHeight: fh, rods, brick, width: W, depth: D, input } = design;
+  const railZ = frameTop - p; // underside of the top rails
+  const frame = new THREE.MeshPhysicalMaterial({ color: '#949494', metalness: 0.8, roughness: 0.42 });
+  const X = (x) => x - W / 2;
+  const Z = (y) => y - D / 2;
+  const at = (x, y, z) => new THREE.Vector3(X(x), z, Z(y));
+  const name = `${size}${size}`;
+  let tag = '';
+  const add = (o, part, hw = 0) => {
+    const [nb, nn] = Array.isArray(hw) ? hw : [hw, hw];
+    o.userData = { tag, part, hw: [...(nb ? [[prof.bolt, nb]] : []), ...(nn ? [[prof.nut, nn]] : [])] };
+    g.add(o);
+    return o;
+  };
+  const barX = (len, x0, y, z, part) => {
+    const b = add(profileBar(p, len, frame), part);
+    b.rotation.y = Math.PI / 2;
+    b.position.set(X(x0), z + p / 2, Z(y));
+  };
+  const barY = (len, x, y0, z, part) => {
+    const b = add(profileBar(p, len, frame), part);
+    b.position.set(X(x), z + p / 2, Z(y0));
+  };
+  const barZ = (len, x, y, z0, part) => {
+    const b = add(profileBar(p, len, frame), part);
+    b.rotation.x = -Math.PI / 2;
+    b.position.set(X(x), z0, Z(y));
+  };
+  const legs = [[p / 2, p / 2, 1, 1], [W - p / 2, p / 2, -1, 1], [p / 2, D - p / 2, 1, -1], [W - p / 2, D - p / 2, -1, -1]];
+
+  tag = 'shortRails';
+  for (const x of [p / 2, W - p / 2]) {
+    barY(D - 2 * p, x, p, railZ, `Short rail ${name} × ${D - 2 * p} mm`);
+    for (const [y, sy] of [[p, 1], [D - p, -1]])
+      add(orient(gusset(p, p * 0.875, 1, frame, p), [0, sy, 0], [0, 0, -1], at(x, y, railZ)), `2 Hole Inside Corner Gusset ${name}`, 2);
+  }
+
+  tag = 'longRails';
+  for (const y of [p / 2, D - p / 2]) barX(W - 2 * p, p, y, railZ, `Long rail ${name} × ${W - 2 * p} mm`);
+  for (const [x, y, sx] of legs)
+    add(orient(gusset(p * 2, p * 0.875, 2, frame, p), [sx, 0, 0], [0, 0, -1], at(x + (sx * p) / 2, y, railZ)), `4 Hole Inside Corner Gusset ${name}`, 4);
+
+  tag = 'legs';
+  for (const [x, y] of legs) barZ(legLength, x, y, fh, `Leg ${name} × ${legLength} mm`);
+
+  tag = 'endStretchers';
+  for (const x of [p / 2, W - p / 2]) {
+    barY(D - 2 * p, x, p, stretcherZ, `End stretcher ${name} × ${D - 2 * p} mm`);
+    for (const [y, sy] of [[p, 1], [D - p, -1]])
+      add(orient(lBracket(p, p * 0.875, 2.5, frame, p), [0, sy, 0], [0, 0, -1], at(x, y, stretcherZ)), `2 Hole Inside Corner Bracket ${name}`, 2);
+  }
+  tag = 'backStretcher';
+  barX(W - 2 * p, p, D - p / 2, stretcherZ, `Back stretcher ${name} × ${W - 2 * p} mm`);
+  for (const [x, sx] of [[p, 1], [W - p, -1]])
+    add(orient(lBracket(p, p * 0.875, 2.5, frame, p), [sx, 0, 0], [0, 0, -1], at(x, D - p / 2, stretcherZ)), `2 Hole Inside Corner Bracket ${name}`, 2);
+  tag = 'backGussets';
+  for (const [x, , sx] of legs.filter(([, , , sy]) => sy < 0))
+    add(orient(gusset(p * 2, p * 0.875, 2, frame, p), [sx, 0, 0], [0, -1, 0], at(x + (sx * p) / 2, D - p, stretcherZ + p / 2)), `4 Hole Inside Corner Gusset ${name}`, 4);
+
+  tag = 'feet';
+  for (const [x, y] of legs) add(levellingFoot(p), `Levelling foot ${prof.footThread}`).position.copy(at(x, y, 0));
+
+  // the rods: one every half brick along the length, axis at the middle of the rails, each
+  // held at both ends by a block on the inner face of a long rail
+  const rodXs = Array.from({ length: rods.count }, (_, i) => p + rods.first + i * rods.pitch);
+  tag = 'blocks';
+  for (const x of rodXs)
+    for (const y of [p + BLOCK_MODEL.y / 2, D - p - BLOCK_MODEL.y / 2])
+      add(mesh(new THREE.BoxGeometry(BLOCK_MODEL.x, BLOCK_MODEL.z, BLOCK_MODEL.y), alu), 'Rod support block', 2).position.copy(at(x, y, rodZ));
+  tag = 'rods';
+  for (const x of rodXs) {
+    const r = add(rod(rods.diameter, rods.length), `Chrome rod Ø${rods.diameter} × ${rods.length} mm`);
+    r.rotation.x = Math.PI / 2; // lie front to back
+    r.position.copy(at(x, D / 2, rodZ));
+  }
+
+  // bricks flat on the rods, inside the rails, touching (can be hidden in the viewer to see the frame)
+  tag = 'bricks';
+  if (input.showBricks === 'no') return g;
+  for (let i = 0; i < input.bricksLong; i++)
+    for (let j = 0; j < input.rows; j++)
+      add(londonBrick(brick, i * 7 + j * 3), 'London stock brick').position.copy(
+        at(p + (i + 0.5) * brick.width, p + (j + 0.5) * brick.length, rodZ + rods.diameter / 2),
+      );
+  return g;
+}
+
 const TAB_T = 5; // matches TAB_THICKNESS in desk.js
 
 // Which model tags are new in each written desk step (parallel to deskSteps).
@@ -940,6 +1090,11 @@ export function deskStepTags(design) {
   ];
 }
 
+// Which model tags are new in each written bench step (parallel to brickbenchSteps).
+export function brickbenchStepTags() {
+  return [['shortRails'], ['longRails'], ['legs'], [], ['endStretchers'], ['backStretcher'], ['backGussets'], ['feet'], ['blocks'], ['rods'], ['bricks'], []];
+}
+
 // --- IKEA-style step pictures ------------------------------------------------------
 // White fills with black outlines. Parts already fitted are drawn pale; the parts added
 // in the step are drawn with dark outlines and a light grey fill. Same camera for every
@@ -954,7 +1109,7 @@ export function renderSteps(design, stepTags) {
   scene.background = new THREE.Color(0xffffff);
   const cam = new THREE.PerspectiveCamera(26, W_PX / H_PX, 1, 50000);
 
-  const flat = { ...design, input: { ...design.input, finish: 'flat', showTop: 'yes' } };
+  const flat = { ...design, input: { ...design.input, finish: 'flat', showTop: 'yes', showBricks: 'yes' } };
   const model = buildModel(flat);
   scene.add(model);
 

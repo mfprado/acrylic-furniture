@@ -2,7 +2,8 @@
 // Built-in Courier keeps the sidebar's monospace look and covers Ø, ×, ° (Latin-1).
 
 export function downloadSpec(design, rows, steps, shot, cutMy, partShots, summary, stepShots) {
-  const desk = design.kind === 'desk';
+  const bench = design.kind === 'brickbench';
+  const desk = design.kind === 'desk' || bench; // both are T-slot frames: profile total, hardware page
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const { input, d } = design;
@@ -28,11 +29,12 @@ export function downloadSpec(design, rows, steps, shot, cutMy, partShots, summar
   };
 
   doc.setFont('courier', 'bold').setFontSize(16).setTextColor(30);
-  doc.text(desk ? 'PROFILE DESK' : 'ROD SHELF', M, y);
+  doc.text(bench ? 'BRICK BENCH' : desk ? 'PROFILE DESK' : 'ROD SHELF', M, y);
   y += 6;
   doc.setFont('courier', 'normal').setFontSize(9).setTextColor(90);
   const sub = desk ? `${design.size}${design.size} profile` : `${design.shelves} shelves · Ø${d} rods`;
-  doc.text(`${input.width} × ${input.depth} × ${input.height} mm · ${sub} · ${new Date().toISOString().slice(0, 10)}`, M, y);
+  const dims = bench ? `${design.seatLength} × ${design.seatDepth} × ${input.height}` : `${input.width} × ${input.depth} × ${input.height}`;
+  doc.text(`${dims} mm · ${sub} · ${new Date().toISOString().slice(0, 10)}`, M, y);
   y += 6;
 
   const imgH = Math.min(100, (textW * shot.h) / shot.w);
@@ -41,7 +43,10 @@ export function downloadSpec(design, rows, steps, shot, cutMy, partShots, summar
   y += imgH + 6;
 
   heading('Configuration');
-  if (desk) {
+  if (bench) {
+    para(`${input.bricksLong} bricks along the length, ${input.rows} ${input.rows === 1 ? 'row' : 'rows'} across the depth · height ${input.height} mm to the top of the bricks`);
+    para(`${summary}`);
+  } else if (desk) {
     para(`Width ${input.width} mm · depth ${input.depth} mm · height to top ${input.height} mm`);
     para(`Top ${input.topThickness} mm plywood${input.topFinish === 'linoleum' ? ' with linoleum' : ''} · ${summary}`);
   } else {
@@ -83,7 +88,7 @@ export function downloadSpec(design, rows, steps, shot, cutMy, partShots, summar
     steps.forEach((s, i) => para(`${i + 1}. ${s}`));
   }
 
-  deliver(doc, `${desk ? 'desk' : 'shelf'}-${input.width}x${input.depth}x${input.height}.pdf`);
+  deliver(doc, bench ? `brick-bench-${design.seatLength}x${design.seatDepth}x${input.height}.pdf` : `${desk ? 'desk' : 'shelf'}-${input.width}x${input.depth}x${input.height}.pdf`);
 }
 
 // --- parts detail: one block per part, render on the left, dimensions on the right ------
@@ -277,7 +282,14 @@ function deskHardware(doc, design, shots, { M, getY, setY, heading }) {
     [shots.foot, 'Levelling foot', `${parts.feet}x  ${prof.footThread} thread`],
     ...(parts.hiddenConnectors ? [[shots.hiddenConnector, 'Hidden Corner Connector', `${parts.hiddenConnectors}x  centre rail ends, M5 grub screws`]] : []),
     ...(parts.threeHolePlates ? [[shots.joiningPlate3, '3 Hole Joining Plate', `${parts.threeHolePlates}x  across the centre rail`]] : []),
-    [shots.tab, 'Joining plate', `${parts.tabs}x  under the rails, carrying the top`],
+    ...(parts.tabs ? [[shots.tab, 'Joining plate', `${parts.tabs}x  under the rails, carrying the top`]] : []),
+    ...(parts.blocks
+      ? [
+          [null, 'Rod support block', `${parts.blocks}x  8 mm bore, holes 32 mm apart`],
+          [shots.rod, 'Chrome rod', `${parts.rods}x  Ø8 mm × ${design.rods.length} mm`],
+          [shots.brick, 'London stock brick', `${parts.bricks}x  228 × 108 × 68 mm`],
+        ]
+      : []),
   ];
   setY(getY() + 2);
   heading('Hardware');
