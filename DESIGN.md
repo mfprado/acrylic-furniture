@@ -144,7 +144,7 @@ Reuse these; don't add a second version of any of them.
 The model should look like a product photo of real parts, not a game.
 
 - `MeshPhysicalMaterial` with real metalness and roughness: polished chrome rods
-  (roughness 0.08), anodised aluminium profile (0.38), transmissive acrylic (IOR 1.49).
+  (roughness 0.08), satin anodised aluminium profile (metalness 1, roughness 0.3, a light clear coat), transmissive acrylic (IOR 1.49).
 - ACES filmic tone mapping at exposure 0.75, a `RoomEnvironment` for reflections, one soft
   shadowed sun and a shadow catcher on the ground.
 - Model real hardware from manufacturer drawings (T-Nutz, McMaster, CPlot), down to bolts and

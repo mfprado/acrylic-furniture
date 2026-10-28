@@ -10,9 +10,9 @@ export const DESK_DEFAULTS = {
   profile: 'auto', // 'auto' or 20 / 30 / 40
   topThickness: 19, // 3/4 in plywood (with linoleum), flush between the top rails
   topFinish: 'linoleum', // 'linoleum' or 'plain'
-  topColor: '#c9b8a3',
+  topColor: '#171353', // deep indigo linoleum
   stretchers: 'yes', // low side + back stretchers
-  frameColor: '#949494',
+  frameColor: '#c4c8cc', // clear anodised aluminium
   centreRail: 'no', // optional rail across the middle; splits the top into two panels
   loadKg: 50, // spread over the top: monitors, arms, things
   showTop: 'yes', // 3D view only: hide the top to see the frame and joining plates

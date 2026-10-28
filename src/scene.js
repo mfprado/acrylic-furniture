@@ -4,6 +4,10 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 const chrome = new THREE.MeshPhysicalMaterial({ color: 0xe6e8eb, metalness: 1, roughness: 0.08 });
 const alu = new THREE.MeshPhysicalMaterial({ color: 0xcfd3d7, metalness: 0.85, roughness: 0.38 });
+// Clear anodised T-slot profile: the same fully metallic base as the chrome rods, but satin
+// (rougher) under a thin clear coat, so it reads as aluminium rather than painted grey.
+const profileMaterial = (color = '#c4c8cc') =>
+  new THREE.MeshPhysicalMaterial({ color, metalness: 1, roughness: 0.3, clearcoat: 0.4, clearcoatRoughness: 0.25 });
 const dark = new THREE.MeshStandardMaterial({ color: 0x1a1a1c, metalness: 0.5, roughness: 0.5 });
 const acrylic = new THREE.MeshPhysicalMaterial({
   color: 0x202d6a, metalness: 0, roughness: 0.18, transmission: 0.9, thickness: 8, ior: 1.49,
@@ -513,7 +517,7 @@ export function renderParts(design) {
 
   if (design.kind === 'desk') {
     const { p, input } = design;
-    const frame = new THREE.MeshPhysicalMaterial({ color: input.frameColor ?? '#949494', metalness: 0.8, roughness: 0.42 });
+    const frame = profileMaterial(input.frameColor);
     const bar = profileBar(p, p * 4, frame);
     const nut = tNut(p);
     nut.scale.setScalar(3);
@@ -883,7 +887,7 @@ function buildDesk(design) {
   const g = new THREE.Group();
   const { input, p, size, prof, railZ, legLength, stretcherZ, withStretchers, midRail, footHeight: fh, parts } = design;
   const { width: W, depth: D, topThickness: tt } = input;
-  const frame = new THREE.MeshPhysicalMaterial({ color: input.frameColor ?? '#949494', metalness: 0.8, roughness: 0.42 });
+  const frame = profileMaterial(input.frameColor);
   const X = (x) => x - W / 2;
   const Z = (y) => y - D / 2;
   const at = (x, y, z) => new THREE.Vector3(X(x), z, Z(y));
@@ -1009,7 +1013,7 @@ function buildDesk(design) {
     const ply = add(mesh(new THREE.BoxGeometry(tw, lino ? tt - 2 : tt, td), wood), `Plywood top ${tw} × ${td} mm`);
     ply.position.set(cx, topZ + (lino ? (tt - 2) / 2 : tt / 2), 0);
     if (lino) {
-      const sheetL = add(mesh(new THREE.BoxGeometry(tw, 2, td), new THREE.MeshStandardMaterial({ color: input.topColor ?? '#c9b8a3', roughness: 0.9 })), 'Linoleum');
+      const sheetL = add(mesh(new THREE.BoxGeometry(tw, 2, td), new THREE.MeshStandardMaterial({ color: input.topColor ?? '#171353', roughness: 0.9 })), 'Linoleum');
       sheetL.position.set(cx, topZ + tt - 1, 0);
     }
   }
