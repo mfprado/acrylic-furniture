@@ -27,7 +27,7 @@ Defined as custom properties on `:root` in `index.html`. Use the variable, not t
 | `--muted` | `#5b6168` | Secondary text, section headings, hints, crumbs |
 | `--line` | `rgba(0,0,0,0.12)` | Hairline dividers, table rows, card borders |
 | `--bg` | `#f7f7f5` | Page background |
-| `--chrome` | brushed aluminium gradient | Sidebar, dropdown menus, part info box |
+| `--chrome` | brushed aluminium gradient | Dropdown menus, part info box |
 
 Fixed colours used alongside the tokens:
 
@@ -73,7 +73,7 @@ colour) belongs to the furniture, not the interface.
 
 ## Surfaces and depth
 
-- **Brushed metal** (`--chrome`) is for panels that hold controls. Plain white (`#fff`) is for
+- **Brushed metal** (`--chrome`) is for floating menus and the part info box. Plain white (`#fff`) is for
   content: idea cards, part photos, the 3D viewer's light gradient (`#fff` to `#eceef0`).
 - Edges look machined: a 1px darker border plus a 1px white inner highlight
   (`box-shadow: inset ... rgba(255,255,255,0.35)`) on the sidebar and section headings.
