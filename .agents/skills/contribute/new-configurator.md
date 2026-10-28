@@ -19,10 +19,7 @@ The process has two halves:
 
 - If it's on the Ideas board, read its card in `src/ideas.js` and its GitHub issue
   (comments included): the proposer's words and pictures are the starting point.
-- If it isn't, suggest adding it first with the `add-idea` skill, so others can see it's
-  being worked on. Not required.
-- Suggest they comment on the issue ("I'm designing this") so nobody duplicates the work.
-  Offer to write the comment for them.
+- If it isn't, offer to add it to the board too with the `add-idea` skill. Not required.
 
 ### 2. Interview the designer
 
